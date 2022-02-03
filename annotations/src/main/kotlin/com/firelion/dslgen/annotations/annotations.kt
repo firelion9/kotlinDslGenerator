@@ -31,7 +31,7 @@ import kotlin.reflect.KClass
  * @param makeInline __(CURRENTLY TREATED AS true)__
  *        if `true`, all associated functions would be generated with `inline` modifier.
  */
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CONSTRUCTOR)
 @Retention(AnnotationRetention.SOURCE)
 annotation class GenerateDsl(
     val markerClass: KClass<*>,
