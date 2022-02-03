@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2022 Ternopol Leonid.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
+ */
+
+package com.firelion.dslgen
+
+import com.firelion.dslgen.util.processingException
+import com.firelion.dslgen.util.unreachableCode
+import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.symbol.*
+
+/**
+ * `@GenerateDsl` representation.
+ */
+internal data class GenerationParameters(
+    val markerClass: KSType,
+    val functionName: String?,
+    val contextClassName: String,
+    val monoParameter: Boolean,
+    val makeInline: Boolean,
+)
+
+/**
+ * Reads `@GenerateDsl` from a function, verifies them
+ * and applies default values to unspecified annotation arguments.
+ */
+internal fun readGenerationParametersAnnotation(
+    annotation: KSAnnotation,
+    function: KSFunctionDeclaration,
+    precomputedIdentifier: String,
+    logger: KSPLogger,
+): GenerationParameters {
+    var markerClass: KSType? = null
+    var functionName = ""
+    var contextClassName = ""
+    var monoParameter = false
+    var makeInline = true
+
+    annotation.arguments.forEach { arg ->
+        when (arg.name!!.asString()) {
+            "markerClass" -> markerClass = arg.value as KSType
+            "functionName" -> functionName = arg.value as String
+            "contextClassName" -> contextClassName = arg.value as String
+            "monoParameter" -> monoParameter = arg.value as Boolean
+            "makeInline" -> makeInline = arg.value as Boolean
+        }
+    }
+
+    if (markerClass == null)
+        processingException(
+            annotation.location,
+            message = "markerClass is not set in the source file"
+        )
+    if (functionName.isEmpty()) functionName = function.simpleName.getShortName()
+    if (contextClassName.isEmpty()) contextClassName = "\$Context\$$precomputedIdentifier"
+
+    var classDeclaration = markerClass!!.declaration
+
+    while (classDeclaration is KSTypeAlias) {
+        markerClass = classDeclaration.type.resolve()
+        classDeclaration = markerClass!!.declaration
+    }
+    if (classDeclaration !is KSClassDeclaration) unreachableCode()
+
+    if (classDeclaration.classKind != ClassKind.ANNOTATION_CLASS)
+        processingException(
+            annotation.location,
+            message = "markerClass should be an annotation"
+        )
+
+    if (!classDeclaration.annotations.any {
+            it.shortName.asString() == "DslMarker"
+                    && it.annotationType.resolve().declaration.qualifiedName?.asString() == "kotlin.DslMarker"
+        })
+        processingException(
+            annotation.location,
+            message = "markerClass should be annotated with @DslMarker"
+        )
+
+    if (!makeInline)
+        logger.warn("Non-inline DSLs are not supported yet. makeInline = false would be ignored", function)
+    if (monoParameter)
+        logger.warn("Mono-parameter DSLs are not supported yet. monoParameter = true would be ignored", function)
+
+    return GenerationParameters(markerClass!!, functionName, contextClassName, monoParameter, makeInline)
+}
