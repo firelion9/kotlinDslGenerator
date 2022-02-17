@@ -6,7 +6,6 @@
 package com.firelion.dslgen.generator.util
 
 import com.google.devtools.ksp.isPublic
-import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
@@ -16,9 +15,9 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
  * By default, returns class's public primary constructor with at least 1 parameter (if present).
  * For some collections (lists, sets, maps and sequences) returns functions like arrayListOf or sequenceOf.
  */
-internal fun KSClassDeclaration.findConstructionFunction(resolver: Resolver, data: Data): KSFunctionDeclaration? {
+internal fun KSClassDeclaration.findConstructionFunction(data: Data): KSFunctionDeclaration? {
     fun resolveFunction(name: String) =
-        resolver.getFunctionDeclarationsByName(resolver.getKSNameFromString(name), includeTopLevel = true)
+        data.resolver.getFunctionDeclarationsByName(data.resolver.getKSNameFromString(name), includeTopLevel = true)
             .find {
                 it.parameters.firstOrNull()?.type?.resolve()
                     ?.let { it1 -> data.usefulTypes.ksArray.isAssignableFrom(it1) } ?: false

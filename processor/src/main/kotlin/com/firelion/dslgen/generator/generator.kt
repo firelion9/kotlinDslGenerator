@@ -8,17 +8,10 @@ package com.firelion.dslgen.generator
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.annotations.GenerateDsl
 import com.firelion.dslgen.generator.generation.*
-import com.firelion.dslgen.generator.generation.generateCollectionAdder
-import com.firelion.dslgen.generator.generation.generateDslCollectionAdder
-import com.firelion.dslgen.generator.generation.generateDslFunctionSetter
-import com.firelion.dslgen.generator.generation.generateFunctionSetter
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.Data
-import com.firelion.dslgen.generator.util.GeneratedDslInfo
-import com.firelion.dslgen.generator.util.GeneratedDslParameterInfo
-import com.firelion.dslgen.generator.util.getClassDeclaration
 import com.firelion.dslgen.readGenerationParametersAnnotation
-import com.firelion.dslgen.util.*
+import com.firelion.dslgen.util.processingException
+import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
@@ -28,6 +21,10 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 import com.squareup.kotlinpoet.ksp.writeTo
 
+/**
+ * Wrapper around [processFunction0].
+ * Catches all exceptions and adds location to them.
+ */
 internal fun processFunction(
     function: KSFunctionDeclaration,
     data: Data,
@@ -48,6 +45,10 @@ internal fun processFunction(
     processingException(function.location, e)
 }
 
+/**
+ * Generates DSL for specified [function]
+ * and recursively calls itself for all parameters' construction functions.
+ */
 private fun processFunction0(
     function: KSFunctionDeclaration,
     data: Data,
@@ -137,7 +138,8 @@ private fun processFunction0(
         }
             ?: parentGenerationParameters!!.copy(
                 functionName = null,
-                contextClassName = "\$Context\$$identifier"
+                contextClassName = "\$Context\$$identifier",
+                monoParameter = parentGenerationParameters.monoParameter && (function.parameters.size == 1)
             )
 
 
@@ -178,16 +180,17 @@ private fun processFunction0(
     )
     data.generatedDsls[identifier] = generatedDsl
 
-    generateSpecification(
-        generatedDsl,
-        function.containingFile,
-        newTypeParameters,
-        returnTypeArguments,
-        parentGenerationParameters,
-        parentDslMarker,
-        data,
-        function
-    )
+    if (!generationParameters.monoParameter)
+        generateSpecification(
+            generatedDsl,
+            function.containingFile,
+            newTypeParameters,
+            returnTypeArguments,
+            parentGenerationParameters,
+            parentDslMarker,
+            data,
+            function
+        )
 
     data.logger.logging("generating dsl $identifier", function)
 
@@ -217,6 +220,9 @@ private fun processFunction0(
     return contextClassName
 }
 
+/**
+ * Generates DSL using data prepared by [processFunction0].
+ */
 private fun FileSpec.Builder.generateDsl(
     generationParameters: GenerationParameters,
     typeVariables: List<TypeVariableName>,
@@ -226,7 +232,7 @@ private fun FileSpec.Builder.generateDsl(
     typeParameterResolver: TypeParameterResolver,
     data: Data,
 ): ClassName {
-    val dslMarker = AnnotationSpec.Companion.builder(generationParameters.markerClass.toClassName()).build()
+    val dslMarker = AnnotationSpec.builder(generationParameters.markerClass.toClassName()).build()
 
     val contextClassSpec = generateContextClass(
         generationParameters,
@@ -242,7 +248,7 @@ private fun FileSpec.Builder.generateDsl(
         else typeVariables
 
     val contextClassName =
-        ClassName(packageName, contextClassSpec.name!!)
+        ClassName(packageName, generationParameters.contextClassName)
 
     val contextTypeName =
         (if (possiblyReifiedTypeVariables.isEmpty()) contextClassName
@@ -298,7 +304,7 @@ private fun FileSpec.Builder.generateDsl(
                 data
             )
 
-            elementClass?.findConstructionFunction(data.resolver, data)?.let { constructor ->
+            elementClass?.findConstructionFunction(data)?.let { constructor ->
                 generateDslCollectionAdder(
                     "element",
                     elementType,
@@ -315,7 +321,7 @@ private fun FileSpec.Builder.generateDsl(
             }
         } else if (!prop.second.isPrimitive()) {
             val cls = prop.second.getClassDeclaration()
-            cls?.findConstructionFunction(data.resolver, data)?.let { constructor ->
+            cls?.findConstructionFunction(data)?.let { constructor ->
                 generateDslFunctionSetter(
                     prop.first.name!!.asString(),
                     prop.first.name!!.asString(),

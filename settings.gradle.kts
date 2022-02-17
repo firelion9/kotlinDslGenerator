@@ -13,5 +13,5 @@ pluginManagement {
 rootProject.name = "kotlinDslGenerator"
 
 include(":processor", ":annotations", ":postProcessor")
-//include("workload")
+if (file("workload").exists()) include(":workload")
 include("gradlePlugin")

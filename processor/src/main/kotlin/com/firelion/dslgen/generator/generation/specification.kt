@@ -116,7 +116,7 @@ internal fun generateSpecification(
                     data
                 )
 
-                elementClass?.findConstructionFunction(data.resolver, data)?.let { constructor ->
+                elementClass?.findConstructionFunction(data)?.let { constructor ->
                     specFileBuilder.generateDslCollectionAdder(
                         "element",
                         elementType,
@@ -133,7 +133,7 @@ internal fun generateSpecification(
                 }
             } else if (!argType.isPrimitive()) {
                 val cls = argType.getClassDeclaration()
-                cls?.findConstructionFunction(data.resolver, data)?.let { constructor ->
+                cls?.findConstructionFunction(data)?.let { constructor ->
                     specFileBuilder.generateDslFunctionSetter(
                         param.backingPropertyName.removeSurrounding("\$\$"),
                         param.backingPropertyName.removeSurrounding("\$\$"),
