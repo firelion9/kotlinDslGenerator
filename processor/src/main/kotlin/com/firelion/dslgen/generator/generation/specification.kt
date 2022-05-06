@@ -107,7 +107,7 @@ internal fun generateSpecification(
                 specFileBuilder.generateCollectionAdder(
                     "element",
                     elementType,
-                    param.backingPropertyName.removeSurrounding("\$\$"),
+                    param.backingPropertyName,
                     param.index,
                     newTypeParameters,
                     contextTypeName,
@@ -120,7 +120,7 @@ internal fun generateSpecification(
                     specFileBuilder.generateDslCollectionAdder(
                         "element",
                         elementType,
-                        param.backingPropertyName.removeSurrounding("\$\$"),
+                        param.backingPropertyName,
                         param.index,
                         constructor,
                         generationParameters,
@@ -135,8 +135,8 @@ internal fun generateSpecification(
                 val cls = argType.getClassDeclaration()
                 cls?.findConstructionFunction(data)?.let { constructor ->
                     specFileBuilder.generateDslFunctionSetter(
-                        param.backingPropertyName.removeSurrounding("\$\$"),
-                        param.backingPropertyName.removeSurrounding("\$\$"),
+                        param.backingPropertyName,
+                        param.backingPropertyName,
                         argType,
                         param.index,
                         constructor,

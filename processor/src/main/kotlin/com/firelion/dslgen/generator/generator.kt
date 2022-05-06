@@ -168,7 +168,7 @@ private fun processFunction0(
             .mapIndexed { idx, it ->
                 it.name!!.asString() to
                         GeneratedDslParameterInfo(
-                            "\$\$" + it.name!!.asString() + "\$\$",
+                            it.name!!.asString(),
                             idx,
                             it.type.resolve()
                         )
