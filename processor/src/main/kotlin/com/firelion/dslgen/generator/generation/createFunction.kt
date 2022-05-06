@@ -67,28 +67,28 @@ internal fun FileSpec.Builder.generateCreateFunction(
                     data.usefulTypes.ksArray.isAssignableFrom(type) ->
                         addWithToArray("Typed")
 
-                    data.usefulTypes.ksBooleanArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksBooleanArray == type ->
                         addWithToArray("Boolean")
 
-                    data.usefulTypes.ksByteArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksByteArray == type ->
                         addWithToArray("Byte")
 
-                    data.usefulTypes.ksShortArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksShortArray == type ->
                         addWithToArray("Short")
 
-                    data.usefulTypes.ksCharArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksCharArray == type ->
                         addWithToArray("Char")
 
-                    data.usefulTypes.ksIntArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksIntArray == type ->
                         addWithToArray("Int")
 
-                    data.usefulTypes.ksFloatArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksFloatArray == type ->
                         addWithToArray("Float")
 
-                    data.usefulTypes.ksLongArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksLongArray == type ->
                         addWithToArray("Long")
 
-                    data.usefulTypes.ksDoubleArray.isAssignableFrom(type) ->
+                    data.usefulTypes.ksDoubleArray == type ->
                         addWithToArray("Double")
 
                     else -> {

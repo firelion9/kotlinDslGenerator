@@ -26,14 +26,14 @@ internal fun KSType.isPrimitive() = nullability == Nullability.NOT_NULL &&
  */
 internal fun KSType.isArrayType(data: Data) = when {
     data.usefulTypes.ksArray.isAssignableFrom(this) -> true
-    isAssignableFrom(data.usefulTypes.ksBooleanArray) -> true
-    isAssignableFrom(data.usefulTypes.ksByteArray) -> true
-    isAssignableFrom(data.usefulTypes.ksCharArray) -> true
-    isAssignableFrom(data.usefulTypes.ksShortArray) -> true
-    isAssignableFrom(data.usefulTypes.ksIntArray) -> true
-    isAssignableFrom(data.usefulTypes.ksFloatArray) -> true
-    isAssignableFrom(data.usefulTypes.ksLongArray) -> true
-    isAssignableFrom(data.usefulTypes.ksDoubleArray) -> true
+    this == data.usefulTypes.ksBooleanArray -> true
+    this == data.usefulTypes.ksByteArray -> true
+    this == data.usefulTypes.ksCharArray -> true
+    this == data.usefulTypes.ksShortArray -> true
+    this == data.usefulTypes.ksIntArray -> true
+    this == data.usefulTypes.ksFloatArray -> true
+    this == data.usefulTypes.ksLongArray -> true
+    this == data.usefulTypes.ksDoubleArray -> true
 
     else -> false
 }
