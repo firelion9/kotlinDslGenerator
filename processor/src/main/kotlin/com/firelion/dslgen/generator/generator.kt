@@ -122,10 +122,8 @@ private fun processFunction0(
         }
     }
 
-    val generationParametersAnnotation = function.annotations.find {
-        it.shortName.getShortName() == GenerateDsl::class.simpleName &&
-                data.generateDslType.isAssignableFrom(it.annotationType.resolve())
-    }
+    val generationParametersAnnotation =
+        function.annotations.findMatchingTypeOrNull(data.usefulTypes.ksGeneratedDsl)
 
     val generationParameters =
         generationParametersAnnotation?.let {

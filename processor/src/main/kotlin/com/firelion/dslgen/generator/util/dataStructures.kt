@@ -5,6 +5,7 @@
 
 package com.firelion.dslgen.generator.util
 
+import com.firelion.dslgen.annotations.GenerateDsl
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
@@ -18,7 +19,6 @@ import com.google.devtools.ksp.symbol.KSTypeParameter
  */
 internal class Data(
     val resolver: Resolver,
-    val generateDslType: KSType,
     val codeGenerator: CodeGenerator,
     val logger: KSPLogger,
     val usefulTypes: UsefulTypes,
@@ -77,6 +77,8 @@ internal class UsefulTypes(resolver: Resolver) {
     val ksMutableMap: KSType
     val ksHashMap: KSType
 
+    val ksGeneratedDsl: KSType
+
     init {
         ksArray = resolver.builtIns.arrayType
         ksBooleanArray = resolver.ksTypeOf<BooleanArray>()
@@ -102,6 +104,8 @@ internal class UsefulTypes(resolver: Resolver) {
         ksMap = resolver.ksTypeOf<Map<*, *>>()
         ksMutableMap = resolver.ksTypeOf<MutableMap<*, *>>()
         ksHashMap = resolver.ksTypeOf<HashMap<*, *>>()
+
+        ksGeneratedDsl = resolver.ksTypeOf<GenerateDsl>()
     }
 
     private inline fun <reified T> Resolver.ksTypeOf() =

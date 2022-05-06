@@ -5,6 +5,7 @@
 
 package com.firelion.dslgen.generator.util
 
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.Nullability
@@ -82,3 +83,11 @@ internal fun KSType.castFromBackingFieldType(selfTypeName: TypeName) =
         else ->
             ""
     }
+
+internal fun Sequence<KSAnnotation>.filterMatchingType(type: KSType): Sequence<KSAnnotation> = filter {
+    it.shortName.getShortName() == type.declaration.simpleName.getShortName()
+            && type.isAssignableFrom(it.annotationType.resolve())
+}
+
+internal fun Sequence<KSAnnotation>.findMatchingTypeOrNull(type: KSType): KSAnnotation? =
+    filterMatchingType(type).firstOrNull()

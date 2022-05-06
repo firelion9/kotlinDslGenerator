@@ -6,16 +6,17 @@
 package com.firelion.dslgen
 
 import com.firelion.dslgen.annotations.GenerateDsl
+import com.firelion.dslgen.generator.processFunction
 import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.util.UsefulTypes
-import com.firelion.dslgen.generator.processFunction
 import com.firelion.dslgen.util.processingException
-import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.validate
 import com.google.devtools.ksp.visitor.KSDefaultVisitor
 
@@ -31,7 +32,6 @@ internal class DslSymbolProcessor(
 
         val data = Data(
             resolver,
-            resolver.getClassDeclarationByName<GenerateDsl>()!!.asType(emptyList()),
             codeGenerator,
             logger,
             UsefulTypes(resolver),
