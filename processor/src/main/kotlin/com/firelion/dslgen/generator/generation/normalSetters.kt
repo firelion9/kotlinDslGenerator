@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.processFunction
+import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -32,12 +33,7 @@ internal fun FileSpec.Builder.generateFunctionSetter(
 ) {
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
-        .apply {
-            if (generationParameters.makeInline) {
-                addModifiers(KModifier.INLINE)
-                addAnnotation(NOTHING_TO_INLINE)
-            }
-        }
+        .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables)
         .receiver(contextClassName)
         .addParameter(name, backingPropertyType.toTypeNameFix(typeParameterResolver))

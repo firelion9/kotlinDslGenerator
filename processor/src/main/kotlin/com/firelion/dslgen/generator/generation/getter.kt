@@ -7,6 +7,7 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.castFromBackingFieldType
+import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -29,12 +30,7 @@ internal fun FileSpec.Builder.generateFunctionGetter(
     val returnType = backingPropertyType.toTypeNameFix(typeParameterResolver)
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
-        .apply {
-            if (generationParameters.makeInline) {
-                addModifiers(KModifier.INLINE)
-                addAnnotation(NOTHING_TO_INLINE)
-            }
-        }
+        .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables)
         .receiver(contextClassName)
         .returns(returnType)

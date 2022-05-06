@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.util.castFromBackingFieldType
+import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
@@ -29,12 +30,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
     data: Data,
 ) {
     FunSpec.builder(CREATE)
-        .apply {
-            if (generationParameters.makeInline) {
-                addModifiers(KModifier.INLINE)
-                addAnnotation(NOTHING_TO_INLINE)
-            }
-        }
+        .makeInlineIfRequested(generationParameters)
         .addModifiers(KModifier.INTERNAL)
         .addAnnotation(PublishedApi::class)
         .addTypeVariables(typeVariables)
