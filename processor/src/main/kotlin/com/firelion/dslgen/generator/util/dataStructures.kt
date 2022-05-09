@@ -6,6 +6,8 @@
 package com.firelion.dslgen.generator.util
 
 import com.firelion.dslgen.annotations.GenerateDsl
+import com.firelion.dslgen.annotations.UseAlternativeConstruction
+import com.firelion.dslgen.annotations.UseDefaultConstructions
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
@@ -78,6 +80,10 @@ internal class UsefulTypes(resolver: Resolver) {
     val ksHashMap: KSType
 
     val ksGeneratedDsl: KSType
+    val ksUseAlternativeConstruction: KSType
+    val ksUseDefaultConstructions: KSType
+
+    val ksVoid: KSType
 
     init {
         ksArray = resolver.builtIns.arrayType
@@ -106,6 +112,10 @@ internal class UsefulTypes(resolver: Resolver) {
         ksHashMap = resolver.ksTypeOf<HashMap<*, *>>()
 
         ksGeneratedDsl = resolver.ksTypeOf<GenerateDsl>()
+        ksUseDefaultConstructions = resolver.ksTypeOf<UseDefaultConstructions>()
+        ksUseAlternativeConstruction = resolver.ksTypeOf<UseAlternativeConstruction>()
+
+        ksVoid = resolver.ksTypeOf<Void>()
     }
 
     private inline fun <reified T> Resolver.ksTypeOf() =

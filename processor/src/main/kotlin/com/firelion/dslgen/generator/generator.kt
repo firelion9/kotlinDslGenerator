@@ -6,7 +6,9 @@
 package com.firelion.dslgen.generator
 
 import com.firelion.dslgen.GenerationParameters
-import com.firelion.dslgen.annotations.GenerateDsl
+import com.firelion.dslgen.annotations.PropertyAccessor
+import com.firelion.dslgen.annotations.UseAlternativeConstruction
+import com.firelion.dslgen.annotations.UseDefaultConstructions
 import com.firelion.dslgen.generator.generation.*
 import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.readGenerationParametersAnnotation
@@ -20,6 +22,7 @@ import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 import com.squareup.kotlinpoet.ksp.writeTo
+import kotlin.reflect.KProperty
 
 /**
  * Wrapper around [processFunction0].
@@ -258,84 +261,16 @@ private fun FileSpec.Builder.generateDsl(
             }
 
     functionParameters.forEachIndexed { index, prop ->
-        val isArrayType = prop.second.isArrayType(data)
-        if (!isArrayType) {
-            generateFunctionGetter(
-                prop.first.name!!.asString(),
-                prop.first.name!!.asString(),
-                prop.second,
-                index,
-                generationParameters,
-                possiblyReifiedTypeVariables,
-                contextTypeName,
-                typeParameterResolver,
-                dslMarker,
-            )
-
-            generateFunctionSetter(
-                prop.first.name!!.asString(),
-                prop.first.name!!.asString(),
-                prop.second,
-                index,
-                requiresNoInitialization = true,
-                generationParameters,
-                possiblyReifiedTypeVariables,
-                contextTypeName,
-                typeParameterResolver,
-                dslMarker,
-            )
-        }
-
-        if (isArrayType) {
-            val elementType = prop.second.arguments[0].type!!.resolve()
-            val elementClass = elementType.getClassDeclaration()
-
-            generateCollectionAdder(
-                "element",
-                elementType,
-                prop.first.name!!.asString(),
-                index,
-                possiblyReifiedTypeVariables,
-                contextTypeName,
-                typeParameterResolver,
-                dslMarker,
-                data
-            )
-
-            elementClass?.findConstructionFunction(data)?.let { constructor ->
-                generateDslCollectionAdder(
-                    "element",
-                    elementType,
-                    prop.first.name!!.asString(),
-                    index,
-                    constructor,
-                    generationParameters,
-                    possiblyReifiedTypeVariables,
-                    contextTypeName,
-                    typeParameterResolver,
-                    dslMarker,
-                    data
-                )
-            }
-        } else if (!prop.second.isPrimitive()) {
-            val cls = prop.second.getClassDeclaration()
-            cls?.findConstructionFunction(data)?.let { constructor ->
-                generateDslFunctionSetter(
-                    prop.first.name!!.asString(),
-                    prop.first.name!!.asString(),
-                    prop.second,
-                    index,
-                    constructor,
-                    true,
-                    generationParameters,
-                    possiblyReifiedTypeVariables,
-                    contextTypeName,
-                    typeParameterResolver,
-                    dslMarker,
-                    data
-                )
-            }
-        }
+        generatePropertySettersAndGetters(
+            prop,
+            data,
+            index,
+            generationParameters,
+            possiblyReifiedTypeVariables,
+            contextTypeName,
+            typeParameterResolver,
+            dslMarker
+        )
     }
 
     generateCreateFunction(
@@ -361,5 +296,234 @@ private fun FileSpec.Builder.generateDsl(
         )
 
     return contextClassName
+}
+
+private fun FileSpec.Builder.generatePropertySettersAndGetters(
+    property: Pair<KSValueParameter, KSType>,
+    data: Data,
+    propertyIndex: Int,
+    generationParameters: GenerationParameters,
+    possiblyReifiedTypeVariables: List<TypeVariableName>,
+    contextTypeName: TypeName,
+    typeParameterResolver: TypeParameterResolver,
+    dslMarker: AnnotationSpec,
+) {
+    @Suppress("UNCHECKED_CAST")
+    fun <T> Map<String?, KSValueArgument>.getSpecial(key: KProperty<*>) = getValue(key.name).value as T
+
+    @Suppress("UNCHECKED_CAST")
+    operator fun <T> Map<String?, KSValueArgument>.get(key: KProperty<T>) = getValue(key.name).value as T
+
+    val defaultsAnnotationArgMap =
+        property.first.annotations
+            .findMatchingTypeOrNull(data.usefulTypes.ksUseDefaultConstructions)
+            ?.let { annotation ->
+                annotation.arguments.associateBy { it.name?.asString() }
+            }
+
+    val isArrayType = property.second.isArrayType(data)
+
+    val elementType by lazy {  property.second.arguments[0].type!!.resolve() }
+    val elementClass by lazy { elementType.getClassDeclaration() }
+
+    if (
+        defaultsAnnotationArgMap
+            ?.get(UseDefaultConstructions::useFunctionLikeGetter)
+            .let { useFunctionLikeGetter ->
+                useFunctionLikeGetter == true || (useFunctionLikeGetter != false && !isArrayType)
+            }
+    ) {
+        generateFunctionGetter(
+            property.first.name!!.asString(),
+            property.first.name!!.asString(),
+            property.second,
+            propertyIndex,
+            generationParameters,
+            possiblyReifiedTypeVariables,
+            contextTypeName,
+            typeParameterResolver,
+            dslMarker,
+        )
+    }
+
+    if (
+        defaultsAnnotationArgMap
+            ?.get(UseDefaultConstructions::useFunctionLikeSetter)
+            .let { useFunctionLikeSetter ->
+                useFunctionLikeSetter == true || (useFunctionLikeSetter != false && !isArrayType)
+            }
+    ) {
+        generateFunctionSetter(
+            property.first.name!!.asString(),
+            property.first.name!!.asString(),
+            property.second,
+            propertyIndex,
+            requiresNoInitialization = true,
+            generationParameters,
+            possiblyReifiedTypeVariables,
+            contextTypeName,
+            typeParameterResolver,
+            dslMarker,
+        )
+    }
+
+    defaultsAnnotationArgMap
+        ?.getSpecial<KSType>(UseDefaultConstructions::usePropertyLikeAccessor)
+        ?.let {
+            PropertyAccessor.valueOf(it.declaration.simpleName.getShortName())
+        }
+        ?.takeUnless { it == PropertyAccessor.NO }
+        ?.let { propertyAccessor ->
+            generatePropertyAccessors(
+                propertyAccessor,
+                property.first.name!!.asString(),
+                property.first.name!!.asString(),
+                property.second,
+                propertyIndex,
+                requiresNoInitialization = true,
+                generationParameters,
+                possiblyReifiedTypeVariables,
+                contextTypeName,
+                typeParameterResolver,
+                dslMarker,
+            )
+        }
+
+    if (isArrayType) {
+        if (defaultsAnnotationArgMap?.get(UseDefaultConstructions::useFunctionAdder) != false) {
+            generateCollectionAdder(
+                "element",
+                elementType,
+                property.first.name!!.asString(),
+                propertyIndex,
+                possiblyReifiedTypeVariables,
+                contextTypeName,
+                typeParameterResolver,
+                dslMarker,
+                data,
+                generationParameters
+            )
+        }
+
+        if (defaultsAnnotationArgMap?.get(UseDefaultConstructions::useFunctionAdder) != false) {
+            elementClass?.findConstructionFunction(data)?.let { constructor ->
+                generateDslCollectionAdder(
+                    "element",
+                    elementType,
+                    property.first.name!!.asString(),
+                    propertyIndex,
+                    constructor,
+                    generationParameters,
+                    possiblyReifiedTypeVariables,
+                    contextTypeName,
+                    typeParameterResolver,
+                    dslMarker,
+                    data
+                )
+            }
+        }
+    }
+
+    if (
+        !property.second.isPrimitive()
+        && defaultsAnnotationArgMap?.get(UseDefaultConstructions::useDefaultSubDslConstruction) != false
+    ) {
+        val cls = property.second.getClassDeclaration()
+        cls?.findConstructionFunction(data)?.let { constructor ->
+            generateDslFunctionSetter(
+                property.first.name!!.asString().removeSurrounding("\$\$"),
+                property.first.name!!.asString(),
+                property.second,
+                propertyIndex,
+                constructor,
+                true,
+                generationParameters,
+                possiblyReifiedTypeVariables,
+                contextTypeName,
+                typeParameterResolver,
+                dslMarker,
+                data
+            )
+        }
+    }
+
+    property.first.annotations
+        .filterMatchingType(data.usefulTypes.ksUseAlternativeConstruction)
+        .map { annotation ->
+            annotation.location to annotation.arguments.associateBy { it.name?.asString() }
+        }
+        .forEach { (location, alternativeConstructionArgMap) ->
+
+            val isElementConstruction: Boolean =
+                alternativeConstructionArgMap[UseAlternativeConstruction::isElementConstruction]
+
+            val functionPackageName: String =
+                alternativeConstructionArgMap[UseAlternativeConstruction::functionPackageName]
+
+            val functionClass: KSType =
+                alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionClass)
+
+            val functionName: String =
+                alternativeConstructionArgMap[UseAlternativeConstruction::functionName]
+
+            val functionParameterTypes: List<KSType> =
+                alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionParameterTypes)
+
+            val functionReturnType: KSType =
+                alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionReturnType)
+
+            val name: String =
+                alternativeConstructionArgMap[UseAlternativeConstruction::name]
+
+            val expectedType = if (isElementConstruction && isArrayType) elementType else property.second
+
+            val resolvedFunction = runCatching {
+                resolveFunction(
+                    data,
+                    expectedType,
+                    functionPackageName,
+                    functionClass,
+                    functionName,
+                    functionParameterTypes,
+                    functionReturnType
+                )
+            }.getOrElse {
+                processingException(
+                    location,
+                    it as Exception,
+                    "failed to find function matching ${alternativeConstructionArgMap.values}"
+                )
+            }
+            if (isElementConstruction && isArrayType) {
+                generateDslCollectionAdder(
+                    name,
+                    elementType,
+                    property.first.name!!.asString(),
+                    propertyIndex,
+                    resolvedFunction,
+                    generationParameters,
+                    possiblyReifiedTypeVariables,
+                    contextTypeName,
+                    typeParameterResolver,
+                    dslMarker,
+                    data
+                )
+            } else {
+                generateDslFunctionSetter(
+                    name,
+                    property.first.name!!.asString(),
+                    property.second,
+                    propertyIndex,
+                    resolvedFunction,
+                    true,
+                    generationParameters,
+                    possiblyReifiedTypeVariables,
+                    contextTypeName,
+                    typeParameterResolver,
+                    dslMarker,
+                    data
+                )
+            }
+        }
 }
 
