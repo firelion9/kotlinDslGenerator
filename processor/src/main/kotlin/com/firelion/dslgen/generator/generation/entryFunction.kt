@@ -7,6 +7,7 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.Data
+import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -26,11 +27,7 @@ internal fun FileSpec.Builder.generateEntryFunction(
 ) {
     val paramName = "builderAction"
     FunSpec.builder(generationParameters.functionName!!)
-        .apply {
-            if (generationParameters.makeInline) {
-                addModifiers(KModifier.INLINE)
-            }
-        }
+        .makeInlineIfRequested(generationParameters, suppressWarning = false)
         .addAnnotation(EXPERIMENTAL_CONTRACTS_OPT_IN)
         .addAnnotation(dslMarker)
         .addTypeVariables(typeVariables)

@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.processFunction
+import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -28,10 +29,11 @@ internal fun FileSpec.Builder.generateCollectionAdder(
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
     @Suppress("UNUSED_PARAMETER") data: Data, // may be used in future for some reasons
+    generationParameters: GenerationParameters,
 ) {
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
-        .addModifiers(KModifier.INLINE)
+        .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables)
         .receiver(contextClassName)
         .addParameter("element", elementType.toTypeNameFix(typeParameterResolver))
@@ -85,7 +87,7 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
 
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
-        .addModifiers(KModifier.INLINE)
+        .makeInlineIfRequested(generationParameters, suppressWarning = false)
         .addTypeVariables(typeVariables)
         .receiver(contextClassName)
         .addParameter("\$builder\$",

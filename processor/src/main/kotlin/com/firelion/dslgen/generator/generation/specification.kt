@@ -113,7 +113,8 @@ internal fun generateSpecification(
                     contextTypeName,
                     typeParameterResolver,
                     dslMarker,
-                    data
+                    data,
+                    generationParameters
                 )
 
                 elementClass?.findConstructionFunction(data)?.let { constructor ->

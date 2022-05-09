@@ -89,7 +89,7 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
 
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
-        .addModifiers(KModifier.INLINE)
+        .makeInlineIfRequested(generationParameters, suppressWarning = false)
         .addTypeVariables(typeVariables)
         .receiver(contextClassName)
         .addParameter("\$builder\$",
