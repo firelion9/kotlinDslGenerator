@@ -57,7 +57,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
                 val name = "\$\$${param.name!!.asString()}\$\$"
 
                 fun addWithToArray(typeName: String) =
-                    addCode("*%N.to${typeName}Array(),\n", name)
+                    addCode((if (param.isVararg) "*" else "") + "%N.to${typeName}Array(),\n", name)
 
                 when {
                     data.usefulTypes.ksArray.isAssignableFrom(type) ->
