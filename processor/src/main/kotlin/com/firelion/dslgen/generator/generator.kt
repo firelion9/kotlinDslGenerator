@@ -323,7 +323,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
 
     val isArrayType = property.second.isArrayType(data)
 
-    val elementType by lazy {  property.second.arguments[0].type!!.resolve() }
+    val elementType by lazy { property.second.arguments[0].type!!.resolve() }
     val elementClass by lazy { elementType.getClassDeclaration() }
 
     if (
@@ -450,9 +450,9 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     property.first.annotations
         .filterMatchingType(data.usefulTypes.ksUseAlternativeConstruction)
         .map { annotation ->
-            annotation.location to annotation.arguments.associateBy { it.name?.asString() }
+            annotation to annotation.arguments.associateBy { it.name?.asString() }
         }
-        .forEach { (location, alternativeConstructionArgMap) ->
+        .forEach { (annotation, alternativeConstructionArgMap) ->
 
             val isElementConstruction: Boolean =
                 alternativeConstructionArgMap[UseAlternativeConstruction::isElementConstruction]
@@ -475,6 +475,12 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             val name: String =
                 alternativeConstructionArgMap[UseAlternativeConstruction::name]
 
+            if (isElementConstruction && !isArrayType)
+                data.logger.warn(
+                    "`${UseAlternativeConstruction::isElementConstruction.name} = true` would be ignored for non-array types",
+                    annotation.arguments.find { it.name?.asString() == UseAlternativeConstruction::isElementConstruction.name }
+                )
+
             val expectedType = if (isElementConstruction && isArrayType) elementType else property.second
 
             val resolvedFunction = runCatching {
@@ -489,7 +495,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 )
             }.getOrElse {
                 processingException(
-                    location,
+                    annotation.location,
                     it as Exception,
                     "failed to find function matching ${alternativeConstructionArgMap.values}"
                 )
