@@ -48,7 +48,7 @@ annotation class GenerateDsl(
  * but it is neither annotated with [GenerateDsl] nor used for generating a sub-DSl for another function,
  * [UseDefaultConstructions] will have no effect.
  *
- * [useSubDslAdder] and [useFunctionAdder] are ignored for non-collection type parameters.
+ * [useSubDslAdder] and [useFunctionAdder] are ignored for non-array type parameters.
  *
  * @see [UseAlternativeConstruction]
  */
@@ -97,7 +97,7 @@ enum class PropertyAccessor {
  *   Otherwise, the only one matching function is resolving result.
  *
  * @param [isElementConstruction] is also used to determine if *The Kotlin Dsl Generator* should generate
- *      setter or collection element adder using resolved function.
+ *      setter or array element adder using resolved function.
  *
  * @see [UseDefaultConstructions]
  */

@@ -51,7 +51,7 @@ internal class GeneratedDslParameterInfo(
 )
 
 /**
- * Collection well-known useful [KSType]s, especially collection types
+ * Collection of well-known useful [KSType]s
  */
 internal class UsefulTypes(resolver: Resolver) {
     val ksArray: KSType
