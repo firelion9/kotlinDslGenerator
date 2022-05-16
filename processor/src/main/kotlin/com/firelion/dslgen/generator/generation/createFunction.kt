@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.util.castFromBackingFieldType
+import com.firelion.dslgen.generator.util.isArrayType
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSName
@@ -40,7 +41,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
             val requiresPostProcess = data.allowDefaultArguments && functionParameters.any { it.first.hasDefault }
 
             functionParameters.forEachIndexed { index, (param, _) ->
-                if (data.allowDefaultArguments && !param.hasDefault)
+                if (!(param.hasDefault && data.allowDefaultArguments) && !param.type.resolve().isArrayType(data))
                     addCode(checkInitialization(index, param.name!!.asString()))
             }
 
