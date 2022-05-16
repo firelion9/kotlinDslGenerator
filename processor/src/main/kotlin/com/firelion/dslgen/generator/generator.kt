@@ -146,8 +146,9 @@ private fun processFunction0(
 
     val typeParameters = function.typeParameters
 
-    val typeParameterResolver = typeParameters.toTypeParameterResolver(sourceTypeHint = (function.qualifiedName
-        ?: function.simpleName).asString())
+    val typeParameterResolver = typeParameters
+        .toTypeParameterResolver(sourceTypeHint = (function.qualifiedName ?: function.simpleName).asString())
+
     val typeVariables = typeParameters.map { ksTypeParameter ->
         TypeVariableName(
             name = ksTypeParameter.name.getShortName(),
