@@ -24,7 +24,7 @@ import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
  * Fixed version of [KSType.toTypeName].
  *
  * KSP doesn't actually provide source type arguments for [KSTypeAlias]
- * ([KSTypeAlias.typeParameters] are type arguments of aliased type, not alis itself),
+ * ([KSTypeAlias.typeParameters] are type arguments of aliased type, not alias itself),
  * and the original version expects them to be provided through an extra argument,
  * but it seems to be impossible to find correct arguments for resolved types.
  *
