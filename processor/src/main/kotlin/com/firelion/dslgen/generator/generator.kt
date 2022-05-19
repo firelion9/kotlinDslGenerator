@@ -149,13 +149,7 @@ private fun processFunction0(
     val typeParameterResolver = typeParameters
         .toTypeParameterResolver(sourceTypeHint = (function.qualifiedName ?: function.simpleName).asString())
 
-    val typeVariables = typeParameters.map { ksTypeParameter ->
-        TypeVariableName(
-            name = ksTypeParameter.name.getShortName(),
-            bounds = ksTypeParameter.bounds.map { it.resolve().toTypeNameFix(typeParameterResolver) }.toList(),
-            variance = null, // Couldn't be OUT
-        )
-    }
+    val typeVariables = typeParameters.toTypeVariableNames(typeParameterResolver)
 
     val functionParameters = function.parameters.map { it to it.type.resolve() }
 
@@ -198,19 +192,13 @@ private fun processFunction0(
 
     val contextClassName = fileBuilder.generateDsl(
         generationParameters,
+        typeParameters,
         typeVariables,
         functionParameters,
         functionReturnType,
-        function.qualifiedName ?: object : KSName {
-            val qualifierField = function.parentDeclaration!!.qualifiedName!!.asString()
-            val nameField = function.simpleName.asString()
-
-            override fun asString(): String = "$qualifierField.$nameField"
-
-            override fun getQualifier(): String = qualifierField
-
-            override fun getShortName(): String = nameField
-        },
+        function.qualifiedName ?: data.resolver.getKSNameFromString(
+            "${function.parentDeclaration!!.qualifiedName!!.asString()}.${function.simpleName.asString()}"
+        ),
         typeParameterResolver,
         data
     )
@@ -227,6 +215,7 @@ private fun processFunction0(
  */
 private fun FileSpec.Builder.generateDsl(
     generationParameters: GenerationParameters,
+    typeParameters: List<KSTypeParameter>,
     typeVariables: List<TypeVariableName>,
     functionParameters: List<Pair<KSValueParameter, KSType>>,
     returnType: KSType,
@@ -267,6 +256,7 @@ private fun FileSpec.Builder.generateDsl(
             data,
             index,
             generationParameters,
+            typeParameters,
             possiblyReifiedTypeVariables,
             contextTypeName,
             typeParameterResolver,
@@ -304,6 +294,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     data: Data,
     propertyIndex: Int,
     generationParameters: GenerationParameters,
+    typeParameters: List<KSTypeParameter>,
     possiblyReifiedTypeVariables: List<TypeVariableName>,
     contextTypeName: TypeName,
     typeParameterResolver: TypeParameterResolver,
@@ -439,6 +430,21 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 constructor,
                 true,
                 generationParameters,
+                possiblyReifiedTypeVariables,
+                contextTypeName,
+                typeParameterResolver,
+                dslMarker,
+                data
+            )
+            generateSubFunctionSetter(
+                property.first.name!!.asString().removeSurrounding("\$\$"),
+                property.first.name!!.asString(),
+                property.second,
+                propertyIndex,
+                constructor,
+                true,
+                generationParameters,
+                typeParameters,
                 possiblyReifiedTypeVariables,
                 contextTypeName,
                 typeParameterResolver,
