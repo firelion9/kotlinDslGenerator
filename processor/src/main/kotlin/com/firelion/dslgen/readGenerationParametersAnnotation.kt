@@ -109,8 +109,15 @@ internal fun readGenerationParametersAnnotation(
             annotation.location,
             message = "markerClass is not set in the source file"
         )
-    if (functionName.isEmpty()) functionName = function.simpleName.getShortName()
+
+    if (functionName.isEmpty())
+        functionName = function.simpleName.getShortName()
+            .takeUnless { it == "<init>" }
+            ?: function.parentDeclaration!!.simpleName.asString().classNameToFunctionName()
+
     if (contextClassName.isEmpty()) contextClassName = "\$Context\$$precomputedIdentifier"
 
     return GenerationParameters(markerClass!!, functionName, contextClassName, monoParameter, makeInline)
 }
+
+private fun String.classNameToFunctionName() = this.first().toString().lowercase() + substring(1)
