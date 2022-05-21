@@ -10,8 +10,12 @@ import com.firelion.dslgen.generator.generation.NOTHING_TO_INLINE
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 
-internal fun FunSpec.Builder.makeInlineIfRequested(generationParameters: GenerationParameters, suppressWarning: Boolean = true) = apply {
-    if (generationParameters.makeInline) {
+internal fun FunSpec.Builder.makeInlineIfRequested(
+    generationParameters: GenerationParameters,
+    suppressWarning: Boolean = true,
+    forceInline: Boolean = false,
+) = apply {
+    if (forceInline || generationParameters.makeInline) {
         addModifiers(KModifier.INLINE)
         if (suppressWarning) addAnnotation(NOTHING_TO_INLINE)
     }

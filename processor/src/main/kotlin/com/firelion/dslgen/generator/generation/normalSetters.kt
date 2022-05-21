@@ -38,12 +38,15 @@ internal fun FileSpec.Builder.generateFunctionSetter(
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
 ) {
+    val backingPropertyTypeName = backingPropertyType.toTypeNameFix(typeParameterResolver)
+    val usedTypeVariables = backingPropertyTypeName.usedTypeVariables()
+
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
         .makeInlineIfRequested(generationParameters)
-        .addTypeVariables(typeVariables)
-        .receiver(contextClassName)
-        .addParameter(name, backingPropertyType.toTypeNameFix(typeParameterResolver))
+        .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
+        .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
+        .addParameter(name, backingPropertyTypeName)
         .apply {
             if (requiresNoInitialization)
                 addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))
@@ -92,13 +95,15 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
             }
             .let { it.copy(annotations = it.annotations + listOf(dslMarker)) }
 
+    val usedTypeVariables = innerContextTypeName.usedTypeVariables()
+
     addImport(innerContextClassName.packageName, CREATE)
 
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
         .makeInlineIfRequested(generationParameters, suppressWarning = false)
-        .addTypeVariables(typeVariables)
-        .receiver(contextClassName)
+        .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
+        .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
         .addParameter("\$builder\$",
             LambdaTypeName.get(
                 receiver = innerContextTypeName,
@@ -152,12 +157,14 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
     val resolver = exitFunction.typeParameters.toTypeParameterResolver(typeParameterResolver)
     val paramsWithType = exitFunction.parameters.map { it to it.type.resolve() }
 
+    val usedTypeVariables = backingPropertyType.toTypeNameFix(resolver).usedTypeVariables()
+
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
         .makeInlineIfRequested(generationParameters)
-        .addTypeVariables(typeVariables)
+        .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .addTypeVariables(extraTypeParameters.toTypeVariableNames(resolver))
-        .receiver(contextClassName)
+        .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
         .apply {
             paramsWithType.forEach { (param, type) ->
                 val kpType = type.replaceTypeParameters(inferredTypes, data).toTypeNameFix(resolver)

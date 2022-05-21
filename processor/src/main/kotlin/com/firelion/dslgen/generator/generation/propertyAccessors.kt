@@ -7,8 +7,11 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.annotations.PropertyAccessor
+import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.generator.util.castFromBackingFieldType
+import com.firelion.dslgen.generator.util.filterUsed
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
+import com.firelion.dslgen.generator.util.usedTypeVariables
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -34,11 +37,12 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
     require(propertyAccessor != PropertyAccessor.NO)
 
     val propertyType = backingPropertyType.toTypeNameFix(typeParameterResolver)
+    val usedTypeVariables = propertyType.usedTypeVariables()
 
     PropertySpec.builder(name, propertyType)
         .addAnnotation(dslMarker)
-        .addTypeVariables(typeVariables)
-        .receiver(contextClassName)
+        .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
+        .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
         .apply {
             if (propertyAccessor == PropertyAccessor.GETTER_AND_SETTER) {
                 mutable()

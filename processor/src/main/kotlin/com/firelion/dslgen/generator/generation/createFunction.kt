@@ -30,8 +30,14 @@ internal fun FileSpec.Builder.generateCreateFunction(
     typeParameterResolver: TypeParameterResolver,
     data: Data,
 ) {
+    val hasReifiedTypeParameters = typeVariables.any { it.isReified }
+
     FunSpec.builder(CREATE)
-        .makeInlineIfRequested(generationParameters)
+        .makeInlineIfRequested(
+            generationParameters,
+            suppressWarning = hasReifiedTypeParameters || generationParameters.makeInline,
+            forceInline = hasReifiedTypeParameters
+        )
         .addModifiers(KModifier.INTERNAL)
         .addAnnotation(PublishedApi::class)
         .addTypeVariables(typeVariables)

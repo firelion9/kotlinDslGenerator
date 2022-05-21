@@ -40,6 +40,23 @@ internal fun KSType.isArrayType(data: Data) = when {
 }
 
 /**
+ * Returns array element type for array types and `null` for others.
+ */
+internal fun KSType.arrayElementType(data: Data) = when {
+    data.usefulTypes.ksArray.isAssignableFrom(this) -> arguments.first().type!!.resolve()
+    this == data.usefulTypes.ksBooleanArray -> data.resolver.builtIns.booleanType
+    this == data.usefulTypes.ksByteArray -> data.resolver.builtIns.byteType
+    this == data.usefulTypes.ksCharArray -> data.resolver.builtIns.charType
+    this == data.usefulTypes.ksShortArray -> data.resolver.builtIns.shortType
+    this == data.usefulTypes.ksIntArray -> data.resolver.builtIns.intType
+    this == data.usefulTypes.ksFloatArray -> data.resolver.builtIns.floatType
+    this == data.usefulTypes.ksLongArray -> data.resolver.builtIns.longType
+    this == data.usefulTypes.ksDoubleArray -> data.resolver.builtIns.doubleType
+
+    else -> null
+}
+
+/**
  * Returns nullable copy of non-primitive types or passed primitive type.
  */
 internal fun KSType.backingPropertyType(): KSType =

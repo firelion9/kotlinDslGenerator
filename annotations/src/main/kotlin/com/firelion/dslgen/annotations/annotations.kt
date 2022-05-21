@@ -48,7 +48,7 @@ annotation class GenerateDsl(
  * but it is neither annotated with [GenerateDsl] nor used for generating a sub-DSl for another function,
  * [UseDefaultConstructions] will have no effect.
  *
- * [useSubDslAdder] and [useFunctionAdder] are ignored for non-array type parameters.
+ * [useSubDslAdder], [useSubFunctionAdder] and [useFunctionAdder] are ignored for non-array type parameters.
  *
  * @see [UseAlternativeConstruction]
  */
@@ -56,10 +56,12 @@ annotation class GenerateDsl(
 @Retention(AnnotationRetention.SOURCE)
 annotation class UseDefaultConstructions(
     val useDefaultSubDslConstruction: Boolean = true,
+    val useSubFunctionSetter: Boolean = true,
     val useFunctionLikeSetter: Boolean = true,
     val useFunctionLikeGetter: Boolean = true,
     val usePropertyLikeAccessor: PropertyAccessor = PropertyAccessor.NO,
     val useFunctionAdder: Boolean = true,
+    val useSubFunctionAdder: Boolean = true,
     val useSubDslAdder: Boolean = true,
 )
 

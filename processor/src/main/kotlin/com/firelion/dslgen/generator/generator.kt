@@ -13,7 +13,6 @@ import com.firelion.dslgen.generator.generation.*
 import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.readGenerationParametersAnnotation
 import com.firelion.dslgen.util.processingException
-import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
@@ -225,25 +224,33 @@ private fun FileSpec.Builder.generateDsl(
 ): ClassName {
     val dslMarker = AnnotationSpec.builder(generationParameters.markerClass.toClassName()).build()
 
+    val erasableTypeVariables = typeVariables.map { if (it.isReified) it.copy(reified = false) else it }
+
     val contextClassSpec = generateContextClass(
         generationParameters,
-        typeVariables,
+        erasableTypeVariables,
         functionParameters,
         typeParameterResolver,
         data
     )
 
-    val possiblyReifiedTypeVariables =
-        if (generationParameters.makeInline)
-            typeVariables.map { it.copy(reified = true) }
-        else typeVariables
-
     val contextClassName =
         ClassName(packageName, generationParameters.contextClassName)
 
-    val contextTypeName =
-        (if (possiblyReifiedTypeVariables.isEmpty()) contextClassName
-        else contextClassName.parameterizedBy(possiblyReifiedTypeVariables.map { it }))
+    val erasableContextTypeName =
+        (if (typeVariables.isEmpty()) contextClassName
+        else contextClassName.parameterizedBy(erasableTypeVariables.map { it }))
+            .let {
+                it.copy(
+                    annotations = it.annotations + dslMarker
+                )
+            }
+
+    val reifiedTypeVariables = typeVariables.withReifiedTypeVariables(functionParameters, contextClassSpec, data)
+
+    val reifiedContextTypeName =
+        (if (typeVariables.isEmpty()) contextClassName
+        else contextClassName.parameterizedBy(reifiedTypeVariables.map { it }))
             .let {
                 it.copy(
                     annotations = it.annotations + dslMarker
@@ -257,8 +264,8 @@ private fun FileSpec.Builder.generateDsl(
             index,
             generationParameters,
             typeParameters,
-            possiblyReifiedTypeVariables,
-            contextTypeName,
+            erasableTypeVariables,
+            erasableContextTypeName,
             typeParameterResolver,
             dslMarker
         )
@@ -266,9 +273,9 @@ private fun FileSpec.Builder.generateDsl(
 
     generateCreateFunction(
         generationParameters,
-        possiblyReifiedTypeVariables,
+        reifiedTypeVariables,
         functionParameters,
-        contextTypeName,
+        reifiedContextTypeName,
         returnType,
         exitFunction,
         typeParameterResolver,
@@ -278,8 +285,8 @@ private fun FileSpec.Builder.generateDsl(
     if (generationParameters.functionName != null)
         generateEntryFunction(
             generationParameters,
-            possiblyReifiedTypeVariables,
-            contextTypeName,
+            reifiedTypeVariables,
+            reifiedContextTypeName,
             returnType,
             typeParameterResolver,
             dslMarker,
@@ -295,7 +302,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     propertyIndex: Int,
     generationParameters: GenerationParameters,
     typeParameters: List<KSTypeParameter>,
-    possiblyReifiedTypeVariables: List<TypeVariableName>,
+    typeVariables: List<TypeVariableName>,
     contextTypeName: TypeName,
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
@@ -331,7 +338,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             property.second,
             propertyIndex,
             generationParameters,
-            possiblyReifiedTypeVariables,
+            typeVariables,
             contextTypeName,
             typeParameterResolver,
             dslMarker,
@@ -352,7 +359,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             propertyIndex,
             requiresNoInitialization = true,
             generationParameters,
-            possiblyReifiedTypeVariables,
+            typeVariables,
             contextTypeName,
             typeParameterResolver,
             dslMarker,
@@ -374,7 +381,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 propertyIndex,
                 requiresNoInitialization = true,
                 generationParameters,
-                possiblyReifiedTypeVariables,
+                typeVariables,
                 contextTypeName,
                 typeParameterResolver,
                 dslMarker,
@@ -388,7 +395,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 elementType,
                 property.first.name!!.asString(),
                 propertyIndex,
-                possiblyReifiedTypeVariables,
+                typeVariables,
                 contextTypeName,
                 typeParameterResolver,
                 dslMarker,
@@ -397,60 +404,100 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             )
         }
 
-        if (defaultsAnnotationArgMap?.get(UseDefaultConstructions::useFunctionAdder) != false) {
+
+        val generateDslAdder =
+            defaultsAnnotationArgMap?.get(UseDefaultConstructions::useSubDslAdder) != false
+
+        val generateSubFunctionAdder =
+            defaultsAnnotationArgMap?.get(UseDefaultConstructions::useSubFunctionAdder) != false
+
+
+        if (generateDslAdder || generateSubFunctionAdder) {
             elementClass?.findConstructionFunction(data)?.let { constructor ->
-                generateDslCollectionAdder(
-                    "element",
-                    elementType,
-                    property.first.name!!.asString(),
-                    propertyIndex,
-                    constructor,
-                    generationParameters,
-                    possiblyReifiedTypeVariables,
-                    contextTypeName,
-                    typeParameterResolver,
-                    dslMarker,
-                    data
-                )
+
+                if (generateDslAdder)
+                    generateDslCollectionAdder(
+                        "element",
+                        elementType,
+                        property.first.name!!.asString(),
+                        propertyIndex,
+                        constructor,
+                        generationParameters,
+                        typeVariables,
+                        contextTypeName,
+                        typeParameterResolver,
+                        dslMarker,
+                        data
+                    )
+
+                if (generateSubFunctionAdder)
+                    generateSubFunctionAdder(
+                        "element",
+                        elementType,
+                        property.first.name!!.asString(),
+                        propertyIndex,
+                        constructor,
+                        generationParameters,
+                        typeParameters,
+                        typeVariables,
+                        contextTypeName,
+                        typeParameterResolver,
+                        dslMarker,
+                        data
+                    )
+
             }
         }
     }
 
-    if (
-        !property.second.isPrimitive()
-        && defaultsAnnotationArgMap?.get(UseDefaultConstructions::useDefaultSubDslConstruction) != false
-    ) {
-        val cls = property.second.getClassDeclaration()
-        cls?.findConstructionFunction(data)?.let { constructor ->
-            generateDslFunctionSetter(
-                property.first.name!!.asString().removeSurrounding("\$\$"),
-                property.first.name!!.asString(),
-                property.second,
-                propertyIndex,
-                constructor,
-                true,
-                generationParameters,
-                possiblyReifiedTypeVariables,
-                contextTypeName,
-                typeParameterResolver,
-                dslMarker,
-                data
-            )
-            generateSubFunctionSetter(
-                property.first.name!!.asString().removeSurrounding("\$\$"),
-                property.first.name!!.asString(),
-                property.second,
-                propertyIndex,
-                constructor,
-                true,
-                generationParameters,
-                typeParameters,
-                possiblyReifiedTypeVariables,
-                contextTypeName,
-                typeParameterResolver,
-                dslMarker,
-                data
-            )
+
+    if (!property.second.isPrimitive()) {
+
+        val generateDefaultSubDslSetter =
+            defaultsAnnotationArgMap?.get(UseDefaultConstructions::useDefaultSubDslConstruction) != false
+
+        val generateDefaultSubFunctionSetter =
+            defaultsAnnotationArgMap?.get(UseDefaultConstructions::useSubFunctionSetter) != false
+
+        if (generateDefaultSubDslSetter || generateDefaultSubFunctionSetter) {
+
+            val cls = property.second.getClassDeclaration()
+
+            cls?.findConstructionFunction(data)?.let { constructor ->
+
+                if (generateDefaultSubDslSetter)
+                    generateDslFunctionSetter(
+                        property.first.name!!.asString().removeSurrounding("\$\$"),
+                        property.first.name!!.asString(),
+                        property.second,
+                        propertyIndex,
+                        constructor,
+                        true,
+                        generationParameters,
+                        typeVariables,
+                        contextTypeName,
+                        typeParameterResolver,
+                        dslMarker,
+                        data
+                    )
+
+                if (generateDefaultSubFunctionSetter)
+                    generateSubFunctionSetter(
+                        property.first.name!!.asString().removeSurrounding("\$\$"),
+                        property.first.name!!.asString(),
+                        property.second,
+                        propertyIndex,
+                        constructor,
+                        true,
+                        generationParameters,
+                        typeParameters,
+                        typeVariables,
+                        contextTypeName,
+                        typeParameterResolver,
+                        dslMarker,
+                        data
+                    )
+            }
         }
     }
 
@@ -515,7 +562,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                     propertyIndex,
                     resolvedFunction,
                     generationParameters,
-                    possiblyReifiedTypeVariables,
+                    typeVariables,
                     contextTypeName,
                     typeParameterResolver,
                     dslMarker,
@@ -530,7 +577,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                     resolvedFunction,
                     true,
                     generationParameters,
-                    possiblyReifiedTypeVariables,
+                    typeVariables,
                     contextTypeName,
                     typeParameterResolver,
                     dslMarker,

@@ -6,6 +6,7 @@
 package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
+import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.util.backingPropertyInitializer
 import com.firelion.dslgen.generator.util.backingPropertyType
@@ -28,7 +29,7 @@ internal fun FileSpec.Builder.generateContextClass(
     typeParameterResolver: TypeParameterResolver,
     data: Data,
 ) = TypeSpec.classBuilder(generationParameters.contextClassName)
-    .addTypeVariables(typeVariables)
+    .addTypeVariables(typeVariables.map { it.copy(reified = false) })
     .primaryConstructor(
         FunSpec.constructorBuilder()
             .addModifiers(KModifier.INTERNAL)
@@ -38,7 +39,7 @@ internal fun FileSpec.Builder.generateContextClass(
     .apply {
         functionParameters.forEach { (it, type) ->
             if (type.isArrayType(data)) {
-                val elementTypeName = type.arguments[0].type!!.resolve()
+                val elementTypeName = type.arrayElementType(data)!!
                     .toTypeNameFix(typeParameterResolver)
 
                 addProperty(
