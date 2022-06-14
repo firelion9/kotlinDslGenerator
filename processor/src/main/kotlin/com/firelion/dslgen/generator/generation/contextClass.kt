@@ -39,7 +39,7 @@ internal fun FileSpec.Builder.generateContextClass(
     .apply {
         functionParameters.forEach { (it, type) ->
             if (type.isArrayType(data)) {
-                val elementTypeName = type.arrayElementType(data)!!
+                val elementTypeName = type.arrayElementTypeOrNull(data)!!
                     .toTypeNameFix(typeParameterResolver)
 
                 addProperty(

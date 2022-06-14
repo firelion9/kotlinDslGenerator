@@ -28,8 +28,14 @@ internal fun getSpecificationUniqueIdentifier(
     newParameters: List<TypeVariableName>,
     returnTypeArgs: List<KSTypeArgument>,
     contextClassName: String,
-) = ("$contextClassName with " + returnTypeArgs.getSignature(newParameters.asSequence().withIndex()
-    .associate { it.value.name to it.index })).getHash()
+) =
+    ("$contextClassName with " +
+            returnTypeArgs.getSignature(
+                newParameters.asSequence().withIndex().associate { it.value.name to it.index }
+            ))
+        .let {
+            it to it.getHash()
+        }
 
 /**
  * Returns signature of a function.

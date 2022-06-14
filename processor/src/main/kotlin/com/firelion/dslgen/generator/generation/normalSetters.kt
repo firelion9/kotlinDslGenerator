@@ -71,6 +71,7 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
     requiresNoInitialization: Boolean,
     generationParameters: GenerationParameters,
     typeVariables: List<TypeVariableName>,
+    typeParameters: List<KSTypeParameter>,
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
@@ -83,6 +84,7 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
             generationParameters,
             dslMarker,
             typeVariables,
+            typeParameters,
             backingPropertyType.arguments
         )
 

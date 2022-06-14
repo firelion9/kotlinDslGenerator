@@ -42,7 +42,7 @@ internal fun KSType.isArrayType(data: Data) = when {
 /**
  * Returns array element type for array types and `null` for others.
  */
-internal fun KSType.arrayElementType(data: Data) = when {
+internal fun KSType.arrayElementTypeOrNull(data: Data) = when {
     data.usefulTypes.ksArray.isAssignableFrom(this) -> arguments.first().type!!.resolve()
     this == data.usefulTypes.ksBooleanArray -> data.resolver.builtIns.booleanType
     this == data.usefulTypes.ksByteArray -> data.resolver.builtIns.byteType

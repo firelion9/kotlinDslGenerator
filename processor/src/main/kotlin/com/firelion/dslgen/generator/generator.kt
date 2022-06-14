@@ -32,7 +32,8 @@ internal fun processFunction(
     data: Data,
     parentGenerationParameters: GenerationParameters? = null,
     parentDslMarker: AnnotationSpec? = null,
-    newTypeParameters: List<TypeVariableName>? = null,
+    newTypeVariables: List<TypeVariableName>? = null,
+    newTypeParameters: List<KSTypeParameter>? = null,
     returnTypeArguments: List<KSTypeArgument>? = null,
 ): ClassName = try {
     processFunction0(
@@ -40,6 +41,7 @@ internal fun processFunction(
         data,
         parentGenerationParameters,
         parentDslMarker,
+        newTypeVariables,
         newTypeParameters,
         returnTypeArguments
     )
@@ -56,7 +58,8 @@ private fun processFunction0(
     data: Data,
     parentGenerationParameters: GenerationParameters?,
     parentDslMarker: AnnotationSpec?,
-    newTypeParameters: List<TypeVariableName>?,
+    newTypeVariables: List<TypeVariableName>?,
+    newTypeParameters: List<KSTypeParameter>?,
     returnTypeArguments: List<KSTypeArgument>?,
 ): ClassName {
     val identifier = function.getUniqueIdentifier()
@@ -71,6 +74,7 @@ private fun processFunction0(
         generateSpecification(
             generatedDsl,
             function.containingFile,
+            newTypeVariables,
             newTypeParameters,
             returnTypeArguments,
             parentGenerationParameters,
@@ -112,6 +116,7 @@ private fun processFunction0(
             generateSpecification(
                 generatedDsl,
                 function.containingFile,
+                newTypeVariables,
                 newTypeParameters,
                 returnTypeArguments,
                 parentGenerationParameters,
@@ -175,10 +180,13 @@ private fun processFunction0(
     )
     data.generatedDsls[identifier] = generatedDsl
 
+    data.logger.logging("generating dsl $identifier", function)
+
     if (!generationParameters.monoParameter)
         generateSpecification(
             generatedDsl,
             function.containingFile,
+            newTypeVariables,
             newTypeParameters,
             returnTypeArguments,
             parentGenerationParameters,
@@ -186,8 +194,6 @@ private fun processFunction0(
             data,
             function
         )
-
-    data.logger.logging("generating dsl $identifier", function)
 
     val contextClassName = fileBuilder.generateDsl(
         generationParameters,
@@ -424,6 +430,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                         constructor,
                         generationParameters,
                         typeVariables,
+                        typeParameters,
                         contextTypeName,
                         typeParameterResolver,
                         dslMarker,
@@ -475,6 +482,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                         true,
                         generationParameters,
                         typeVariables,
+                        typeParameters,
                         contextTypeName,
                         typeParameterResolver,
                         dslMarker,
@@ -563,6 +571,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                     resolvedFunction,
                     generationParameters,
                     typeVariables,
+                    typeParameters,
                     contextTypeName,
                     typeParameterResolver,
                     dslMarker,
@@ -578,6 +587,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                     true,
                     generationParameters,
                     typeVariables,
+                    typeParameters,
                     contextTypeName,
                     typeParameterResolver,
                     dslMarker,

@@ -70,6 +70,7 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
     itemFunction: KSFunctionDeclaration,
     generationParameters: GenerationParameters,
     typeVariables: List<TypeVariableName>,
+    typeParameters: List<KSTypeParameter>,
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
@@ -81,6 +82,7 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
         generationParameters,
         dslMarker,
         typeVariables,
+        typeParameters,
         elementType.arguments
     )
 
