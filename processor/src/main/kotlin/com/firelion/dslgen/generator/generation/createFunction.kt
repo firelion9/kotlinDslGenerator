@@ -6,6 +6,7 @@
 package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
+import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.util.castFromBackingFieldType
 import com.firelion.dslgen.generator.util.isArrayType
@@ -95,6 +96,9 @@ internal fun FileSpec.Builder.generateCreateFunction(
                         addWithToArray("Double")
 
                     else -> {
+                        if (!type.isCastFromBackingFieldTypeSafe())
+                            addAnnotation(UNCHECKED_CAST)
+
                         val cast = type.castFromBackingFieldType(type.toTypeNameFix(typeParameterResolver))
                         addCode("%N$cast,\n", name)
                     }
@@ -104,6 +108,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
 
             addCode(")")
         }
+        .mergeAnnotations()
         .build()
         .run(this::addFunction)
 }

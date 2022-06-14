@@ -42,10 +42,14 @@ internal fun FileSpec.Builder.generateFunctionGetter(
         .apply {
             addCode(checkInitialization(backingPropertyIndex, backingPropertyName))
 
+            if (!backingPropertyType.isCastFromBackingFieldTypeSafe())
+                addAnnotation(UNCHECKED_CAST)
+
             val cast = backingPropertyType.castFromBackingFieldType(returnType)
 
             addCode("return %N$cast\n", "\$\$$backingPropertyName\$\$")
         }
+        .mergeAnnotations()
         .build()
         .run(this::addFunction)
 

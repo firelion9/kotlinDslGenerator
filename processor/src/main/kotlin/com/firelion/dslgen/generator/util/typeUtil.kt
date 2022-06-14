@@ -101,6 +101,12 @@ internal fun KSType.castFromBackingFieldType(selfTypeName: TypeName) =
             ""
     }
 
+/**
+ * Returns `true` is expression returned by [castFromBackingFieldType] is safe (checked).
+ */
+internal fun KSType.isCastFromBackingFieldTypeSafe() =
+    declaration !is KSTypeParameter
+
 internal fun Sequence<KSAnnotation>.filterMatchingType(type: KSType): Sequence<KSAnnotation> = filter {
     it.shortName.getShortName() == type.declaration.simpleName.getShortName()
             && type.isAssignableFrom(it.annotationType.resolve())

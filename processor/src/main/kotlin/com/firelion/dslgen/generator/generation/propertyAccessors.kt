@@ -8,7 +8,6 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.annotations.PropertyAccessor
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.castFromBackingFieldType
 import com.firelion.dslgen.generator.util.filterUsed
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.generator.util.usedTypeVariables
@@ -67,10 +66,14 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
                 .apply {
                     addCode(checkInitialization(backingPropertyIndex, backingPropertyName))
 
+                    if (!backingPropertyType.isCastFromBackingFieldTypeSafe())
+                        addAnnotation(UNCHECKED_CAST)
+
                     val cast = backingPropertyType.castFromBackingFieldType(propertyType)
 
                     addCode("return this.%N$cast\n", "\$\$$backingPropertyName\$\$")
                 }
+                .mergeAnnotations()
                 .build()
         )
         .build()

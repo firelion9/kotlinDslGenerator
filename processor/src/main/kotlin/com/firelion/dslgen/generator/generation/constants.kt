@@ -55,3 +55,8 @@ internal val EXACTLY_ONCE_NAME = MemberName(ClassName("kotlin.contracts", "Invoc
  * [LinkedList], used as temporary storage for array DSL parameters.
  */
 internal val LINKED_LIST = ClassName(LinkedList::class.java.packageName, LinkedList::class.java.simpleName)
+
+/**
+ * Annotation that suppress `unchecked cast` warning.
+ */
+internal val UNCHECKED_CAST = AnnotationSpec.builder(Suppress::class).addMember("\"UNCHECKED_CAST\"").build()
