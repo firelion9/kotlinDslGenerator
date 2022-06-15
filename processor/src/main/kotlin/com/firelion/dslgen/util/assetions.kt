@@ -7,6 +7,6 @@ package com.firelion.dslgen.util
 
 /**
  * Marks an expression as unreachable.
- * It is not checked anyway be the compiler and intended only to improve code readability.
+ * It is not checked anyway by the compiler and intended only to improve code readability.
  */
 internal fun unreachableCode(): Nothing = throw AssertionError("this code couldn't be reached")
