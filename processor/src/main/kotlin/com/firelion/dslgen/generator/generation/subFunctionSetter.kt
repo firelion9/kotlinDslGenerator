@@ -7,13 +7,7 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.Data
-import com.firelion.dslgen.generator.util.inferTypeParameters
-import com.firelion.dslgen.generator.util.makeInlineIfRequested
-import com.firelion.dslgen.generator.util.usedTypeVariables
 import com.firelion.dslgen.util.toTypeNameFix
-import com.google.devtools.ksp.isConstructor
-import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
@@ -70,19 +64,15 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
             if (requiresNoInitialization)
                 addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))
 
-            val functionName =
-                if (exitFunction.isConstructor())
-                    (exitFunction.parentDeclaration as KSClassDeclaration).qualifiedName
-                else exitFunction.qualifiedName
-
             addCode(initialize(backingPropertyIndex))
             addCode(
-                "this.%N = ${functionName!!.asString()}(${
+                "this.%N = %N(${
                     exitFunction.parameters.joinToString(prefix = "\n",
                         separator = ",\n",
                         postfix = "\n") { if (it.isVararg) "*%N" else "%N" }
                 })",
                 "\$\$$backingPropertyName\$\$",
+                exitFunction.memberName(),
                 *parameters.map { it.name }.toTypedArray()
             )
         }

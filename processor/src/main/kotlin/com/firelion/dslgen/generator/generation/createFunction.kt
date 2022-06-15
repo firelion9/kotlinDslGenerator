@@ -7,12 +7,8 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.Data
-import com.firelion.dslgen.generator.util.castFromBackingFieldType
-import com.firelion.dslgen.generator.util.isArrayType
-import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.util.toTypeNameFix
-import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.squareup.kotlinpoet.*
@@ -27,7 +23,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
     functionParameters: List<Pair<KSValueParameter, KSType>>,
     contextClassName: TypeName,
     returnType: KSType,
-    exitFunction: KSName,
+    exitFunction: KSFunctionDeclaration,
     typeParameterResolver: TypeParameterResolver,
     data: Data,
 ) {
@@ -54,11 +50,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
 
             if (requiresPostProcess) addCode("%M()\n", POST_PROCESSOR_MARKER_NAME)
 
-            addCode("return %N(\n",
-                if (exitFunction.getShortName() == "<init>") exitFunction.getQualifier().let {
-                    MemberName(it.substringBeforeLast("."),
-                        it.substringAfterLast("."))
-                } else MemberName(exitFunction.getQualifier(), exitFunction.getShortName()))
+            addCode("return %N(\n", exitFunction.memberName())
 
             addCode("⇥")
             functionParameters.asSequence().forEach { (param, type) ->

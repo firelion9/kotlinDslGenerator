@@ -201,9 +201,7 @@ private fun processFunction0(
         typeVariables,
         functionParameters,
         functionReturnType,
-        function.qualifiedName ?: data.resolver.getKSNameFromString(
-            "${function.parentDeclaration!!.qualifiedName!!.asString()}.${function.simpleName.asString()}"
-        ),
+        function,
         typeParameterResolver,
         data
     )
@@ -224,7 +222,7 @@ private fun FileSpec.Builder.generateDsl(
     typeVariables: List<TypeVariableName>,
     functionParameters: List<Pair<KSValueParameter, KSType>>,
     returnType: KSType,
-    exitFunction: KSName,
+    exitFunction: KSFunctionDeclaration,
     typeParameterResolver: TypeParameterResolver,
     data: Data,
 ): ClassName {
