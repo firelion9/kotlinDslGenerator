@@ -6,8 +6,7 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.firelion.dslgen"
-version = "0.1.0"
+apply(from = "../version.gradle.kts")
 
 repositories {
     mavenCentral()

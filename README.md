@@ -18,7 +18,7 @@ buildscript {
     }
     dependencies {
 //        ...         
-        classpath("com.firelion.dslgen:gradlePlugin:0.1.0")
+        classpath("com.firelion.dslgen:gradlePlugin:0.2.0")
     }
 }
 
