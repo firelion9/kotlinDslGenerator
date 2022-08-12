@@ -28,9 +28,11 @@ internal fun FileSpec.Builder.generateCollectionAdder(
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
-    @Suppress("UNUSED_PARAMETER") data: Data, // may be used in future for some reasons
     generationParameters: GenerationParameters,
+    data: Data,
 ) {
+    data.logger.logging("generating collection adder $name")
+
     val elementTypeName = elementType.toTypeNameFix(typeParameterResolver)
     val usedTypeVariables = elementTypeName.usedTypeVariables()
 

@@ -16,28 +16,31 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
  * For some collections (lists, sets, maps and sequences) returns functions like arrayListOf or sequenceOf.
  */
 internal fun KSClassDeclaration.findConstructionFunction(data: Data): KSFunctionDeclaration? {
-    fun resolveFunction(name: String) =
+    fun resolveVarargFunction(name: String) =
         data.resolver.getFunctionDeclarationsByName(data.resolver.getKSNameFromString(name), includeTopLevel = true)
             .find {
-                it.parameters.firstOrNull()?.type?.resolve()
-                    ?.let { it1 -> data.usefulTypes.ksArray.isAssignableFrom(it1) } ?: false
+                it.parameters.size == 1 && it.parameters.first().isVararg
             }
 
     return when (qualifiedName?.asString()) {
-        "kotlin.collections.Map" -> resolveFunction("kotlin.collections.mapOf")
-        "kotlin.collections.MutableMap" -> resolveFunction("kotlin.collections.mutableMapOf")
-        "kotlin.collections.HashMap" -> resolveFunction("kotlin.collections.hashMapOf")
+        "kotlin.collections.Map" -> resolveVarargFunction("kotlin.collections.mapOf")
+        "kotlin.collections.MutableMap" -> resolveVarargFunction("kotlin.collections.mutableMapOf")
+        "kotlin.collections.HashMap" -> resolveVarargFunction("kotlin.collections.hashMapOf")
 
-        "kotlin.collections.Set" -> resolveFunction("kotlin.collections.setOf")
-        "kotlin.collections.MutableSet" -> resolveFunction("kotlin.collections.mutableSetOf")
-        "kotlin.collections.HashSet" -> resolveFunction("kotlin.collections.hashSetOf")
+        "kotlin.collections.Set" -> resolveVarargFunction("kotlin.collections.setOf")
+        "kotlin.collections.MutableSet" -> resolveVarargFunction("kotlin.collections.mutableSetOf")
+        "kotlin.collections.HashSet" -> resolveVarargFunction("kotlin.collections.hashSetOf")
 
-        "kotlin.collections.List" -> resolveFunction("kotlin.collections.listOf")
-        "kotlin.collections.MutableList" -> resolveFunction("kotlin.collections.mutableListOf")
-        "kotlin.collections.ArrayList" -> resolveFunction("kotlin.collections.arrayListOf")
+        "kotlin.collections.List" -> resolveVarargFunction("kotlin.collections.listOf")
+        "kotlin.collections.MutableList" -> resolveVarargFunction("kotlin.collections.mutableListOf")
+        "kotlin.collections.ArrayList" -> resolveVarargFunction("kotlin.collections.arrayListOf")
 
-        "kotlin.sequences.Sequence" -> resolveFunction("kotlin.sequences.sequenceOf")
+        "kotlin.sequences.Sequence" -> resolveVarargFunction("kotlin.sequences.sequenceOf")
 
         else -> primaryConstructor?.takeIf { it.isPublic() && it.parameters.isNotEmpty() }
+    }.also {
+        data.logger.logging(
+            "${qualifiedName?.asString()} resolved construction function is $it"
+        )
     }
 }

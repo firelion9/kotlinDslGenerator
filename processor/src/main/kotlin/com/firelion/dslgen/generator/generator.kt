@@ -13,7 +13,10 @@ import com.firelion.dslgen.generator.generation.*
 import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.readGenerationParametersAnnotation
 import com.firelion.dslgen.util.processingException
+import com.firelion.dslgen.generator.util.resolveActualType
+import com.firelion.dslgen.util.ExtensionKSValueParameter
 import com.google.devtools.ksp.getClassDeclarationByName
+import com.google.devtools.ksp.isConstructor
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -62,13 +65,20 @@ private fun processFunction0(
     newTypeParameters: List<KSTypeParameter>?,
     returnTypeArguments: List<KSTypeArgument>?,
 ): ClassName {
-    val identifier = function.getUniqueIdentifier()
+    data.logger.logging("processing function $function...", function)
+
+    val identifier = function.getUniqueIdentifier(data)
     val pkg = function.packageName.asString()
         .let { if (it.startsWith("kotlin.") || it == "kotlin") "generated.$it" else it }
+
+    data.logger.logging("calculated identifier is $identifier", function)
 
     val functionReturnType: KSType by lazy { function.returnType!!.resolve() }
 
     if (identifier in data.generatedDsls) {
+
+        data.logger.logging("DSL with identifier $identifier is already generated in this session", function)
+
         val generatedDsl = data.generatedDsls.getValue(identifier)
 
         generateSpecification(
@@ -155,7 +165,11 @@ private fun processFunction0(
 
     val typeVariables = typeParameters.toTypeVariableNames(typeParameterResolver)
 
-    val functionParameters = function.parameters.map { it to it.type.resolve() }
+    val functionParameters = buildList {
+        addAll(ExtensionKSValueParameter.receiversOf(function, data).map { it to it.resolveActualType(data) })
+
+        function.parameters.forEach { add(it to it.resolveActualType(data)) }
+    }
 
     val fileBuilder = FileSpec.builder(
         pkg,
@@ -172,7 +186,7 @@ private fun processFunction0(
                         GeneratedDslParameterInfo(
                             it.name!!.asString(),
                             idx,
-                            it.type.resolve()
+                            it.resolveActualType(data)
                         )
             }
             .toMap(),
@@ -180,7 +194,13 @@ private fun processFunction0(
     )
     data.generatedDsls[identifier] = generatedDsl
 
-    data.logger.logging("generating dsl $identifier", function)
+    data.logger.logging("generating DSL $identifier", function)
+
+    if (function.extensionReceiver != null || !function.isConstructor() && function.parentDeclaration is KSClassDeclaration)
+        data.logger.warn(
+            "DSL generator may produce incomplete code for function $function with receiver parameters",
+            function
+        )
 
     if (!generationParameters.monoParameter)
         generateSpecification(
@@ -311,6 +331,8 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
 ) {
+    data.logger.logging("generating setters and getters", property.first)
+
     @Suppress("UNCHECKED_CAST")
     fun <T> Map<String?, KSValueArgument>.getSpecial(key: KProperty<*>) = getValue(key.name).value as T
 
@@ -346,6 +368,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             contextTypeName,
             typeParameterResolver,
             dslMarker,
+            data,
         )
     }
 
@@ -367,6 +390,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             contextTypeName,
             typeParameterResolver,
             dslMarker,
+            data,
         )
     }
 
@@ -389,6 +413,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 contextTypeName,
                 typeParameterResolver,
                 dslMarker,
+                data,
             )
         }
 
@@ -403,8 +428,8 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 contextTypeName,
                 typeParameterResolver,
                 dslMarker,
-                data,
-                generationParameters
+                generationParameters,
+                data
             )
         }
 
@@ -456,7 +481,14 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     }
 
 
-    if (!property.second.isPrimitive()) {
+    val propertyTypeIsPrimitive = property.second.isPrimitive()
+
+    data.logger.logging(
+        "propertyTypeIsPrimitive=$propertyTypeIsPrimitive",
+        property.first
+    )
+
+    if (!propertyTypeIsPrimitive) {
 
         val generateDefaultSubDslSetter =
             defaultsAnnotationArgMap?.get(UseDefaultConstructions::useDefaultSubDslConstruction) != false
@@ -464,9 +496,19 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
         val generateDefaultSubFunctionSetter =
             defaultsAnnotationArgMap?.get(UseDefaultConstructions::useSubFunctionSetter) != false
 
+        data.logger.logging(
+            "generateDefaultSubDslSetter=$generateDefaultSubDslSetter, generateDefaultSubFunctionSetter=$generateDefaultSubFunctionSetter",
+            property.first
+        )
+
         if (generateDefaultSubDslSetter || generateDefaultSubFunctionSetter) {
 
             val cls = property.second.getClassDeclaration()
+
+            data.logger.logging(
+                "${property.second} resolved declaration is $cls",
+                property.first
+            )
 
             cls?.findConstructionFunction(data)?.let { constructor ->
 

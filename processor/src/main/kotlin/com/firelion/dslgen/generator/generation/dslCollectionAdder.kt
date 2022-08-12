@@ -12,6 +12,7 @@ import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.util.filterUsed
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.generator.util.usedTypeVariables
+import com.firelion.dslgen.generator.util.resolveEndTypeArguments
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -37,6 +38,10 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
     dslMarker: AnnotationSpec,
     data: Data,
 ) {
+    data.logger.logging("generating DSL collection adder $name")
+
+    val endTypeArgs = elementType.resolveEndTypeArguments(data)
+
     val elementContextClassName = processFunction(
         itemFunction,
         data,
@@ -44,11 +49,11 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
         dslMarker,
         typeVariables,
         typeParameters,
-        elementType.arguments
+        endTypeArgs
     )
 
     val elementContextTypeName =
-        elementType.arguments
+        endTypeArgs
             .map { it.toTypeNameFix(typeParameterResolver) }
             .let {
                 if (it.isEmpty()) elementContextClassName
@@ -65,7 +70,8 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
         .makeInlineIfRequested(generationParameters, suppressWarning = false)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
-        .addParameter("\$builder\$",
+        .addParameter(
+            "\$builder\$",
             LambdaTypeName.get(
                 receiver = elementContextTypeName,
                 returnType = UNIT

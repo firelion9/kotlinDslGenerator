@@ -29,7 +29,10 @@ internal fun FileSpec.Builder.generateFunctionGetter(
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
+    data: Data,
 ) {
+    data.logger.logging("generating function getter $name")
+
     val returnType = backingPropertyType.toTypeNameFix(typeParameterResolver)
     val usedTypeVariables = returnType.usedTypeVariables()
 

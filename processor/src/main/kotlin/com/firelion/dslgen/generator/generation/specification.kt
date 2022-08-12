@@ -14,6 +14,7 @@ import com.firelion.dslgen.generator.util.findConstructionFunction
 import com.firelion.dslgen.generator.util.getClassDeclaration
 import com.firelion.dslgen.generator.util.getSpecificationUniqueIdentifier
 import com.firelion.dslgen.generator.util.isArrayType
+import com.firelion.dslgen.generator.util.resolveEndTypeArguments
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
@@ -51,6 +52,10 @@ internal fun generateSpecification(
         || dslMarker == null
         || returnTypeArguments.isEmpty()
     ) return
+
+    data.logger.logging(
+        "generating specification for ${generatedDslInfo.contextClassName} with returnTypeArguments=$returnTypeArguments, generatedDslInfo.returnType.arguments=${generatedDslInfo.returnType.arguments}"
+    )
 
     require(returnTypeArguments.size == generatedDslInfo.returnType.arguments.size)
 
@@ -249,7 +254,7 @@ internal fun FileSpec.Builder.generateSpecificationFor(
         dslMarker,
         typeVariables,
         typeParameters,
-        type.arguments.map {
+        type.resolveEndTypeArguments(data).map {
             data.resolver.getTypeArgument(
                 data.resolver.createKSTypeReferenceFromKSType(
                     it.type!!.resolve().replaceTypeParameters(typeMapping, data)

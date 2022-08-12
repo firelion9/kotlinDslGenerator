@@ -19,7 +19,7 @@ private const val IDENTIFIER_SIZE_BYTES = 8
 /**
  * Returns hash of a function signature.
  */
-internal fun KSFunctionDeclaration.getUniqueIdentifier(): String = getSignature().getHash()
+internal fun KSFunctionDeclaration.getUniqueIdentifier(data: Data): String = getSignature(data).getHash()
 
 /**
  * Returns hash of a type parameter specification signature.
@@ -40,17 +40,17 @@ internal fun getSpecificationUniqueIdentifier(
 /**
  * Returns signature of a function.
  */
-private fun KSFunctionDeclaration.getSignature() =
+private fun KSFunctionDeclaration.getSignature(data: Data) =
     when (val parent = parentDeclaration) {
         null -> qualifiedName!!.asString()
         is KSClassDeclaration -> parent.qualifiedName!!.asString() + "/" + simpleName.asString()
         else -> unreachableCode()
-    } + ":" + getTypeSignature()
+    } + ":" + getTypeSignature(data)
 
 /**
  * Returns type signature of a function.
  */
-private fun KSFunctionDeclaration.getTypeSignature(): String {
+private fun KSFunctionDeclaration.getTypeSignature(data: Data): String {
     val typeParameters = typeParameters.asSequence().withIndex().associate { it.value.name.asString() to it.index }
 
     return this.typeParameters.joinToString(prefix = "<", separator = ";", postfix = ">") { parameter ->
@@ -60,7 +60,7 @@ private fun KSFunctionDeclaration.getTypeSignature(): String {
                 }
     } +
             parameters.joinToString(prefix = "(", separator = ";", postfix = ")") {
-                it.type.resolve().getSignature(typeParameters)
+                it.resolveActualType(data).getSignature(typeParameters)
             } +
             returnType!!.resolve().getSignature(typeParameters)
 }

@@ -32,7 +32,10 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
+    data: Data,
 ) {
+    data.logger.logging("generating property accessor $name, propertyAccessor=$propertyAccessor")
+
     require(propertyAccessor != PropertyAccessor.NO)
 
     val propertyType = backingPropertyType.toTypeNameFix(typeParameterResolver)

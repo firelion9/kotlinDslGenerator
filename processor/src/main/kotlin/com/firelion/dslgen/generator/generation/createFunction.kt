@@ -7,6 +7,7 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
+import com.firelion.dslgen.generator.util.resolveActualType
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -44,61 +45,64 @@ internal fun FileSpec.Builder.generateCreateFunction(
             val requiresPostProcess = data.allowDefaultArguments && functionParameters.any { it.first.hasDefault }
 
             functionParameters.forEachIndexed { index, (param, _) ->
-                if (!(param.hasDefault && data.allowDefaultArguments) && !param.type.resolve().isArrayType(data))
+                if (!(param.hasDefault && data.allowDefaultArguments) && !param.resolveActualType(data).isArrayType(data))
                     addCode(checkInitialization(index, param.name!!.asString()))
             }
 
             if (requiresPostProcess) addCode("%M()\n", POST_PROCESSOR_MARKER_NAME)
 
-            addCode("return %N(\n", exitFunction.memberName())
+            addCode("return ")
 
-            addCode("⇥")
-            functionParameters.asSequence().forEach { (param, type) ->
-                val name = "\$\$${param.name!!.asString()}\$\$"
+            addCode(
+                CodeBlock.Builder()
+                    .addFunctionCall(
+                        exitFunction,
+                        functionParameters.asSequence().map { (param, type) ->
+                            val name = "\$\$${param.name!!.asString()}\$\$"
 
-                fun addWithToArray(typeName: String) =
-                    addCode((if (param.isVararg) "*" else "") + "%N.to${typeName}Array(),\n", name)
+                            fun addWithToArray(typeName: String) =
+                                CodeBlock.of((if (param.isVararg) "*" else "") + "%N.to${typeName}Array()", name).toString()
 
-                when {
-                    data.usefulTypes.ksArray.isAssignableFrom(type) ->
-                        addWithToArray("Typed")
+                            when {
+                                data.usefulTypes.ksArray.isAssignableFrom(type) ->
+                                    addWithToArray("Typed")
 
-                    data.usefulTypes.ksBooleanArray == type ->
-                        addWithToArray("Boolean")
+                                data.usefulTypes.ksBooleanArray == type ->
+                                    addWithToArray("Boolean")
 
-                    data.usefulTypes.ksByteArray == type ->
-                        addWithToArray("Byte")
+                                data.usefulTypes.ksByteArray == type ->
+                                    addWithToArray("Byte")
 
-                    data.usefulTypes.ksShortArray == type ->
-                        addWithToArray("Short")
+                                data.usefulTypes.ksShortArray == type ->
+                                    addWithToArray("Short")
 
-                    data.usefulTypes.ksCharArray == type ->
-                        addWithToArray("Char")
+                                data.usefulTypes.ksCharArray == type ->
+                                    addWithToArray("Char")
 
-                    data.usefulTypes.ksIntArray == type ->
-                        addWithToArray("Int")
+                                data.usefulTypes.ksIntArray == type ->
+                                    addWithToArray("Int")
 
-                    data.usefulTypes.ksFloatArray == type ->
-                        addWithToArray("Float")
+                                data.usefulTypes.ksFloatArray == type ->
+                                    addWithToArray("Float")
 
-                    data.usefulTypes.ksLongArray == type ->
-                        addWithToArray("Long")
+                                data.usefulTypes.ksLongArray == type ->
+                                    addWithToArray("Long")
 
-                    data.usefulTypes.ksDoubleArray == type ->
-                        addWithToArray("Double")
+                                data.usefulTypes.ksDoubleArray == type ->
+                                    addWithToArray("Double")
 
-                    else -> {
-                        if (!type.isCastFromBackingFieldTypeSafe())
-                            addAnnotation(UNCHECKED_CAST)
+                                else -> {
+                                    if (!type.isCastFromBackingFieldTypeSafe())
+                                        addAnnotation(UNCHECKED_CAST)
 
-                        val cast = type.castFromBackingFieldType(type.toTypeNameFix(typeParameterResolver))
-                        addCode("%N$cast,\n", name)
-                    }
-                }
-            }
-            addCode("⇤")
-
-            addCode(")")
+                                    val cast = type.castFromBackingFieldType(type.toTypeNameFix(typeParameterResolver))
+                                    CodeBlock.of("%N$cast", name).toString()
+                                }
+                            }
+                        }
+                    )
+                    .build()
+            )
         }
         .mergeAnnotations()
         .build()

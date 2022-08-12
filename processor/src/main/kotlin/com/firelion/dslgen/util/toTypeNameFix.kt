@@ -18,42 +18,35 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 
 /**
  * Fixed version of [KSType.toTypeName].
  *
- * KSP doesn't actually provide source type arguments for [KSTypeAlias]
- * ([KSTypeAlias.typeParameters] are type arguments of aliased type, not alias itself),
- * and the original version expects them to be provided through an extra argument,
- * but it seems to be impossible to find correct arguments for resolved types.
+ * In older versions KSP didn't actually provide source type arguments for [KSTypeAlias]
+ * ([KSType.arguments] were type arguments of aliased type, not alias itself).
+ * The original version of [KSType.toTypeName] expects them to be provided through an extra argument,
+ * but it was impossible to find correct arguments for resolved types.
  *
- * This version hasn't such extra argument and instead expands type aliases to aliased types.
+ * In KSP 1.0.6 (or maybe even earlier) [KSTypeAlias.typeParameters] become correct arguments,
+ * but original version of [KSType.toTypeName] expects them to be arguments of abbreviated type,
+ * so it still works incorrectly.
+ *
+ * This version hasn't extra argument and uses [KSType.arguments] instead.
  */
 internal fun KSType.toTypeNameFix(
     typeParamResolver: TypeParameterResolver,
 ): TypeName {
     val type = when (val decl = declaration) {
+
         is KSClassDeclaration -> {
             decl.toClassName().withTypeArguments(arguments.map { it.toTypeNameFix(typeParamResolver) })
         }
+
         is KSTypeParameter -> typeParamResolver[decl.name.getShortName()]
-        is KSTypeAlias -> {
-            val extraResolver = if (decl.typeParameters.isEmpty()) {
-                typeParamResolver
-            } else {
-                decl.typeParameters.toTypeParameterResolver(typeParamResolver, decl.name.asString())
-            }
-            val mappedArgs = arguments.map { it.toTypeNameFix(extraResolver) }
 
-            val abbreviatedType = decl.type.resolve()
-                .toTypeNameFix(extraResolver)
-                .copy(nullable = isMarkedNullable)
-                .rawType()
-                .withTypeArguments(mappedArgs)
+        is KSTypeAlias -> ClassName(decl.packageName.asString(), decl.simpleName.asString())
+            .withTypeArguments(arguments.map { it.toTypeNameFix(typeParamResolver) })
 
-            /*return@when*/ abbreviatedType
-        }
         else -> error("Unsupported type: $declaration")
     }
 
@@ -65,7 +58,7 @@ internal fun KSType.toTypeNameFix(
  * with [toTypeName] calls replaced with [toTypeNameFix] and no default argument value.
  */
 internal fun KSTypeArgument.toTypeNameFix(
-    typeParamResolver: TypeParameterResolver
+    typeParamResolver: TypeParameterResolver,
 ): TypeName {
     val typeName = type?.resolve()?.toTypeNameFix(typeParamResolver) ?: return STAR
     return when (variance) {
@@ -73,35 +66,6 @@ internal fun KSTypeArgument.toTypeNameFix(
         Variance.CONTRAVARIANT -> WildcardTypeName.consumerOf(typeName)
         Variance.STAR -> STAR
         Variance.INVARIANT -> typeName
-    }
-}
-/**
- * Copy of function from kotlinpoet-ksp.
- */
-private fun TypeName.rawType(): ClassName {
-    return findRawType() ?: throw IllegalArgumentException("Cannot get raw type from $this")
-}
-
-/**
- * Copy of function from kotlinpoet-ksp.
- */
-private fun TypeName.findRawType(): ClassName? {
-    return when (this) {
-        is ClassName -> this
-        is ParameterizedTypeName -> rawType
-        is LambdaTypeName -> {
-            var count = parameters.size
-            if (receiver != null) {
-                count++
-            }
-            val functionSimpleName = if (count >= 23) {
-                "FunctionN"
-            } else {
-                "Function$count"
-            }
-            ClassName("kotlin.jvm.functions", functionSimpleName)
-        }
-        else -> null
     }
 }
 

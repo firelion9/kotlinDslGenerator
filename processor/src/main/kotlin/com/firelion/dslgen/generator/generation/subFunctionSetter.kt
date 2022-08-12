@@ -7,6 +7,7 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
+import com.firelion.dslgen.generator.util.resolveActualType
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -33,17 +34,19 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
     dslMarker: AnnotationSpec,
     data: Data,
 ) {
+    data.logger.logging("generating sub function setter $name")
+
     val (inferredTypes, extraTypeParameters) = inferTypeParameters(
         typeParameters,
         backingPropertyType,
         exitFunction.typeParameters,
-        exitFunction.parameters.map { it.type.resolve() }, // TODO: should we modify type of vararg parameters?
+        exitFunction.parameters.map { it.resolveActualType(data) },
         exitFunction.returnType!!.resolve(),
         data
     )
 
     val resolver = exitFunction.typeParameters.toTypeParameterResolver(typeParameterResolver)
-    val paramsWithType = exitFunction.parameters.map { it to it.type.resolve() }
+    val paramsWithType = exitFunction.parameters.map { it to it.resolveActualType(data) }
 
     val usedTypeVariables = backingPropertyType.toTypeNameFix(resolver).usedTypeVariables()
 

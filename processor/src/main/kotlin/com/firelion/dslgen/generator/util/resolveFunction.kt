@@ -62,12 +62,7 @@ internal fun resolveFunction(
         if (functionParameterTypes.isEmpty()) {
             filteredReturnTypeFunctions
         } else {
-            filteredReturnTypeFunctions.filter {
-                it.parameters.size == functionParameterTypes.size
-                        && it.parameters.indices.all { idx ->
-                    it.parameters[idx].type.resolve() == functionParameterTypes[idx]
-                }
-            }
+            filteredReturnTypeFunctions.filterParameterTypes(functionParameterTypes, data)
         }
 
     val resFunctions = filterSignatureFunctions.toList()
@@ -82,3 +77,31 @@ internal fun resolveFunction(
         }
     }
 }
+
+private fun Sequence<KSFunctionDeclaration>.filterParameterTypes(
+    functionParameterTypes: List<KSType>,
+    data: Data,
+) = filter { candidateFunction ->
+
+    val extensionReceiverCount = if (candidateFunction.extensionReceiver != null) 1 else 0
+    val extensionReceivers = buildList(extensionReceiverCount) {
+        candidateFunction.extensionReceiver?.let { add(it) }
+    }
+
+    val candidateArgCount = extensionReceiverCount + candidateFunction.parameters.size
+
+    when {
+        candidateArgCount != functionParameterTypes.size
+        -> false
+
+        extensionReceivers.indices.any { idx -> extensionReceivers[idx].resolve() != functionParameterTypes[idx] }
+        -> false
+
+        candidateFunction.parameters.indices.any { idx ->
+            candidateFunction.parameters[idx].resolveActualType(data) != functionParameterTypes[extensionReceiverCount + idx]
+        } -> false
+
+        else -> true
+    }
+}
+

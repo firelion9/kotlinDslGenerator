@@ -89,7 +89,7 @@ internal fun inferTypeParameters(
         }
     }
 
-    matchRecursive(expectedReturnType, actualReturnType)
+    matchRecursive(expectedReturnType.expandTypeAliases(data), actualReturnType.expandTypeAliases(data))
 
     // TODO this solution works only for simple causes
 

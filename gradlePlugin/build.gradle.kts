@@ -1,3 +1,5 @@
+val kspVersion: String by project
+
 plugins {
     kotlin("jvm")
     id("java-gradle-plugin")
@@ -27,5 +29,5 @@ dependencies {
     implementation(gradleApi())
 
     implementation(project(":postProcessor"))
-    implementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:1.6.10-1.0.2")
+    implementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:$kspVersion")
 }
