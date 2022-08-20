@@ -11,6 +11,7 @@ import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.generator.util.filterUsed
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.generator.util.usedTypeVariables
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -34,7 +35,7 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
     dslMarker: AnnotationSpec,
     data: Data,
 ) {
-    data.logger.logging("generating property accessor $name, propertyAccessor=$propertyAccessor")
+    data.logger.logging { "generating property accessor $name, propertyAccessor=$propertyAccessor" }
 
     require(propertyAccessor != PropertyAccessor.NO)
 

@@ -11,6 +11,7 @@ import com.firelion.dslgen.generator.util.castFromBackingFieldType
 import com.firelion.dslgen.generator.util.filterUsed
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.generator.util.usedTypeVariables
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -31,7 +32,7 @@ internal fun FileSpec.Builder.generateFunctionGetter(
     dslMarker: AnnotationSpec,
     data: Data,
 ) {
-    data.logger.logging("generating function getter $name")
+    data.logger.logging { "generating function getter $name" }
 
     val returnType = backingPropertyType.toTypeNameFix(typeParameterResolver)
     val usedTypeVariables = returnType.usedTypeVariables()

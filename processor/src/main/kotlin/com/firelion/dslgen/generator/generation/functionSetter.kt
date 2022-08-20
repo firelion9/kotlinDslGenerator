@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -29,7 +30,7 @@ internal fun FileSpec.Builder.generateFunctionSetter(
     dslMarker: AnnotationSpec,
     data: Data,
 ) {
-    data.logger.logging("generating function setter $name")
+    data.logger.logging { "generating function setter $name" }
 
     val backingPropertyTypeName = backingPropertyType.toTypeNameFix(typeParameterResolver)
     val usedTypeVariables = backingPropertyTypeName.usedTypeVariables()

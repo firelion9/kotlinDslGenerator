@@ -13,6 +13,7 @@ import com.firelion.dslgen.generator.util.filterUsed
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.generator.util.usedTypeVariables
 import com.firelion.dslgen.generator.util.resolveEndTypeArguments
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -39,7 +40,7 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
     dslMarker: AnnotationSpec,
     data: Data,
 ) {
-    data.logger.logging("generating DSL function setter $name")
+    data.logger.logging { "generating DSL function setter $name" }
 
     val endTypeArgs = backingPropertyType.resolveEndTypeArguments(data)
 

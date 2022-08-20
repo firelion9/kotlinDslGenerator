@@ -14,6 +14,7 @@ import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.readGenerationParametersAnnotation
 import com.firelion.dslgen.util.processingException
 import com.firelion.dslgen.generator.util.resolveActualType
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.ExtensionKSValueParameter
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.isConstructor
@@ -65,19 +66,19 @@ private fun processFunction0(
     newTypeParameters: List<KSTypeParameter>?,
     returnTypeArguments: List<KSTypeArgument>?,
 ): ClassName {
-    data.logger.logging("processing function $function...", function)
+    data.logger.logging(function) { "processing function $function..." }
 
     val identifier = function.getUniqueIdentifier(data)
     val pkg = function.packageName.asString()
         .let { if (it.startsWith("kotlin.") || it == "kotlin") "generated.$it" else it }
 
-    data.logger.logging("calculated identifier is $identifier", function)
+    data.logger.logging(function) { "calculated identifier is $identifier" }
 
     val functionReturnType: KSType by lazy { function.returnType!!.resolve() }
 
     if (identifier in data.generatedDsls) {
 
-        data.logger.logging("DSL with identifier $identifier is already generated in this session", function)
+        data.logger.logging(function) { "DSL with identifier $identifier is already generated in this session" }
 
         val generatedDsl = data.generatedDsls.getValue(identifier)
 
@@ -98,7 +99,7 @@ private fun processFunction0(
         val dec = data.resolver.getClassDeclarationByName("$pkg.\$Context\$$identifier")
 
         if (dec != null) {
-            data.logger.logging("find DSL $identifier", function)
+            data.logger.logging(function) { "find DSL $identifier" }
 
             val generatedDsl = GeneratedDslInfo(
                 dec.packageName.asString(),
@@ -194,7 +195,7 @@ private fun processFunction0(
     )
     data.generatedDsls[identifier] = generatedDsl
 
-    data.logger.logging("generating DSL $identifier", function)
+    data.logger.logging(function) { "generating DSL $identifier" }
 
     if (function.extensionReceiver != null || !function.isConstructor() && function.parentDeclaration is KSClassDeclaration)
         data.logger.warn(
@@ -331,7 +332,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
 ) {
-    data.logger.logging("generating setters and getters", property.first)
+    data.logger.logging(property.first) { "generating setters and getters" }
 
     @Suppress("UNCHECKED_CAST")
     fun <T> Map<String?, KSValueArgument>.getSpecial(key: KProperty<*>) = getValue(key.name).value as T
@@ -483,10 +484,9 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
 
     val propertyTypeIsPrimitive = property.second.isPrimitive()
 
-    data.logger.logging(
-        "propertyTypeIsPrimitive=$propertyTypeIsPrimitive",
-        property.first
-    )
+    data.logger.logging(property.first) {
+        "propertyTypeIsPrimitive=$propertyTypeIsPrimitive"
+    }
 
     if (!propertyTypeIsPrimitive) {
 
@@ -496,19 +496,17 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
         val generateDefaultSubFunctionSetter =
             defaultsAnnotationArgMap?.get(UseDefaultConstructions::useSubFunctionSetter) != false
 
-        data.logger.logging(
-            "generateDefaultSubDslSetter=$generateDefaultSubDslSetter, generateDefaultSubFunctionSetter=$generateDefaultSubFunctionSetter",
-            property.first
-        )
+        data.logger.logging(property.first) {
+            "generateDefaultSubDslSetter=$generateDefaultSubDslSetter, generateDefaultSubFunctionSetter=$generateDefaultSubFunctionSetter"
+        }
 
         if (generateDefaultSubDslSetter || generateDefaultSubFunctionSetter) {
 
             val cls = property.second.getClassDeclaration()
 
-            data.logger.logging(
-                "${property.second} resolved declaration is $cls",
-                property.first
-            )
+            data.logger.logging(property.first) {
+                "${property.second} resolved declaration is $cls"
+            }
 
             cls?.findConstructionFunction(data)?.let { constructor ->
 

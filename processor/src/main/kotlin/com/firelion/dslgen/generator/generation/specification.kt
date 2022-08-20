@@ -15,6 +15,7 @@ import com.firelion.dslgen.generator.util.getClassDeclaration
 import com.firelion.dslgen.generator.util.getSpecificationUniqueIdentifier
 import com.firelion.dslgen.generator.util.isArrayType
 import com.firelion.dslgen.generator.util.resolveEndTypeArguments
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
@@ -53,9 +54,9 @@ internal fun generateSpecification(
         || returnTypeArguments.isEmpty()
     ) return
 
-    data.logger.logging(
+    data.logger.logging {
         "generating specification for ${generatedDslInfo.contextClassName} with returnTypeArguments=$returnTypeArguments, generatedDslInfo.returnType.arguments=${generatedDslInfo.returnType.arguments}"
-    )
+    }
 
     require(returnTypeArguments.size == generatedDslInfo.returnType.arguments.size)
 
@@ -68,7 +69,7 @@ internal fun generateSpecification(
     if (specUid in data.generatedSpecifications) return
     data.generatedSpecifications.add(specUid)
 
-    data.logger.logging("generating specification ```$specIdentifier``` aka $specUid", nodeForLogging)
+    data.logger.logging(nodeForLogging) { "generating specification ```$specIdentifier``` aka $specUid" }
 
     val fileSpecBuilder =
         FileSpec.builder(generatedDslInfo.contextClassPackage, "\$Dsl\$Specification\$$specUid")
@@ -129,27 +130,24 @@ internal fun FileSpec.Builder.generateSpecificationFor(
 
     val mappedType = type.replaceTypeParameters(typeMapping, data)
 
-    data.logger.logging(
-        "generating specification for ${baseDsl.contextClassName}#${dslParameter.backingPropertyName}",
-        nodeForLogging
-    )
+    data.logger.logging(nodeForLogging) {
+        "generating specification for ${baseDsl.contextClassName}#${dslParameter.backingPropertyName}"
+    }
 
     if (dec is KSTypeParameter || type.arrayElementTypeOrNull(data)?.declaration is KSTypeParameter) run whenTypeParameter@{
         if (mappedType is KSTypeParameter) {
-            data.logger.logging(
-                "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type  is not a TypeParameter, skipping",
-                nodeForLogging
-            )
+            data.logger.logging(nodeForLogging) {
+                "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type  is not a TypeParameter, skipping"
+            }
 
             return@whenTypeParameter
         }
 
         val isArrayType = mappedType.isArrayType(data)
 
-        data.logger.logging(
-            "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type is $mappedType, isArrayType = $isArrayType",
-            nodeForLogging
-        )
+        data.logger.logging(nodeForLogging) {
+            "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type is $mappedType, isArrayType = $isArrayType"
+        }
 
         if (isArrayType) {
             val elementType = mappedType.arguments[0].type!!.resolve()
@@ -191,10 +189,9 @@ internal fun FileSpec.Builder.generateSpecificationFor(
 
             val cls = mappedType.getClassDeclaration()
 
-            data.logger.logging(
-                "$mappedType class declaration is $cls",
-                nodeForLogging
-            )
+            data.logger.logging(nodeForLogging) {
+                "$mappedType class declaration is $cls"
+            }
 
             cls?.findConstructionFunction(data)?.let { constructor ->
 
@@ -233,17 +230,16 @@ internal fun FileSpec.Builder.generateSpecificationFor(
         }
     }
     else
-        data.logger.logging(
-            "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type wasn't a type parameter, no need to generate specification, skipping",
-            nodeForLogging
-        )
+        data.logger.logging(nodeForLogging) {
+            "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type wasn't a type parameter, no need to generate specification, skipping"
+        }
 
     val parameterClassDec = mappedType.getClassDeclaration() ?: run {
-        data.logger.logging("missing class declaration for $mappedType, ignoring it", nodeForLogging)
+        data.logger.logging(nodeForLogging) { "missing class declaration for $mappedType, ignoring it" }
         return
     }
     val constructionFunction = parameterClassDec.findConstructionFunction(data) ?: run {
-        data.logger.logging("missing construction function for $mappedType, ignoring it", nodeForLogging)
+        data.logger.logging(nodeForLogging) { "missing construction function for $mappedType, ignoring it" }
         return
     }
 

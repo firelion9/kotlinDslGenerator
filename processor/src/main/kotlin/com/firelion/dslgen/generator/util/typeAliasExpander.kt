@@ -5,6 +5,7 @@
 
 package com.firelion.dslgen.generator.util
 
+import com.firelion.dslgen.logging
 import com.google.devtools.ksp.symbol.*
 
 internal fun KSType.expandTypeAliases(data: Data): KSType =
@@ -51,8 +52,8 @@ internal tailrec fun KSType.resolveEndTypeArguments(data: Data): List<KSTypeArgu
                 ksTypeParameter to arguments[index].type!!.resolve()
             }.toMap()
 
-            data.logger.logging("type alias type parameter map is $typeArgs")
-            data.logger.logging("type alias type is ${decl.type.resolve()}")
+            data.logger.logging { "type alias type parameter map is $typeArgs" }
+            data.logger.logging { ("type alias type is ${decl.type.resolve()}") }
 
             decl.type.resolve().replaceTypeParameters(typeArgs, data).resolveEndTypeArguments(data)
         }

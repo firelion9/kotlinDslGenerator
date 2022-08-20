@@ -5,6 +5,7 @@
 
 package com.firelion.dslgen.generator.util
 
+import com.firelion.dslgen.logging
 import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
@@ -39,8 +40,7 @@ internal fun KSClassDeclaration.findConstructionFunction(data: Data): KSFunction
 
         else -> primaryConstructor?.takeIf { it.isPublic() && it.parameters.isNotEmpty() }
     }.also {
-        data.logger.logging(
-            "${qualifiedName?.asString()} resolved construction function is $it"
-        )
+        data.logger.logging { "${qualifiedName?.asString()} resolved construction function is $it" }
+
     }
 }

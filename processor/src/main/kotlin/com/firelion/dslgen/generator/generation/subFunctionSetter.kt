@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.generator.util.resolveActualType
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -34,7 +35,7 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
     dslMarker: AnnotationSpec,
     data: Data,
 ) {
-    data.logger.logging("generating sub function setter $name")
+    data.logger.logging { "generating sub function setter $name" }
 
     val (inferredTypes, extraTypeParameters) = inferTypeParameters(
         typeParameters,

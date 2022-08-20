@@ -11,6 +11,7 @@ import com.firelion.dslgen.generator.util.Data
 import com.firelion.dslgen.generator.util.filterUsed
 import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.generator.util.usedTypeVariables
+import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -31,7 +32,7 @@ internal fun FileSpec.Builder.generateCollectionAdder(
     generationParameters: GenerationParameters,
     data: Data,
 ) {
-    data.logger.logging("generating collection adder $name")
+    data.logger.logging { "generating collection adder $name" }
 
     val elementTypeName = elementType.toTypeNameFix(typeParameterResolver)
     val usedTypeVariables = elementTypeName.usedTypeVariables()
