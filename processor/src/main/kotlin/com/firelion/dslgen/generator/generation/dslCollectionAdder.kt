@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -8,12 +8,8 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.processFunction
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.Data
-import com.firelion.dslgen.generator.util.filterUsed
-import com.firelion.dslgen.generator.util.makeInlineIfRequested
-import com.firelion.dslgen.generator.util.usedTypeVariables
-import com.firelion.dslgen.generator.util.resolveEndTypeArguments
 import com.firelion.dslgen.logging
+import com.firelion.dslgen.util.shouldNotBeReached
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -53,9 +49,24 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
         endTypeArgs
     )
 
+    val (typeMapping, extraParameters) = inferTypeParameters(
+        typeParameters,
+        elementType,
+        itemFunction.typeParameters,
+        emptyList(),
+        itemFunction.returnType!!.resolve(),
+        data,
+        shouldInferNewParameters = true
+    )
+
+    if (extraParameters.isNotEmpty()) shouldNotBeReached()
+
     val elementContextTypeName =
-        endTypeArgs
+        itemFunction.typeParameters
+            .asSequence()
+            .map { typeMapping.getValue(it) }
             .map { it.toTypeNameFix(typeParameterResolver) }
+            .toList()
             .let {
                 if (it.isEmpty()) elementContextClassName
                 else elementContextClassName.parameterizedBy(it)

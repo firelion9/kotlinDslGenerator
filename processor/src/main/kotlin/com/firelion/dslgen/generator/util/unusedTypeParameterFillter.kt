@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -18,18 +18,17 @@ internal fun List<TypeVariableName>.filterUsed(usedParameters: Set<TypeVariableN
 /**
  * Replaces unused (not presented in [usedParameters]) type parameters with stars.
  */
-internal fun TypeName.startProjectUnusedParameters(usedParameters: Set<TypeVariableName>): TypeName = when {
-    this !is ParameterizedTypeName -> this
+internal fun TypeName.startProjectUnusedParameters(usedParameters: Set<TypeVariableName>): TypeName =
+    when (this) {
+        is TypeVariableName -> if (this in usedParameters) this else STAR
+        is ParameterizedTypeName -> this.copy(
+            typeArguments = this.typeArguments.map {
+                it.startProjectUnusedParameters(usedParameters)
+            }
+        )
 
-    this.typeArguments.size == usedParameters.size -> this
-
-    else -> this.copy(
-        typeArguments = this.typeArguments.map {
-            if (it is TypeVariableName && it !in usedParameters) STAR
-            else it
-        }
-    )
-}
+        else -> this
+    }
 
 /**
  * Returns set of all type variables used in this [TypeName].

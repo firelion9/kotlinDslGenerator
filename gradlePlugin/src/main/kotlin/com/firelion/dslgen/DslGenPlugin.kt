@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-private const val VERSION = "0.2.0"
+private const val VERSION = "0.3.0" // @hardlink#001 /version.gradle.kts:7
 private const val ALLOW_DEFAULT_ARGS_OPTION = "com.firelion.dslgen.allowDefaultArguments"
 
 /**
@@ -33,8 +33,9 @@ class DslGenPlugin : Plugin<Project> {
         val kotlinVersionNumbers = getKotlinPluginVersion(target.logger).split(".")
 
         val kotlinVersionGraterThenOneSix =
-            (kotlinVersionNumbers[0].toIntOrNull() ?: 0) >= 1 &&
-            (kotlinVersionNumbers[1].toIntOrNull() ?: 0) > 6
+            (kotlinVersionNumbers[0].toIntOrNull() ?: 0)
+                .let { it == 1 && (kotlinVersionNumbers[1].toIntOrNull() ?: 0) > 6 || it > 1 }
+
 
         target.tasks.withType(KotlinCompile::class.java).forEach { kotlinCompile ->
             // post-process output directory of compileKotlin tasks

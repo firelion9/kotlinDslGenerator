@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -54,7 +54,7 @@ internal fun resolveFunction(
             }
         } else {
             allFunctions.filter {
-                functionReturnType == it.returnType!!.resolve()
+                functionReturnType == it.returnType!!.resolve().starProjection()
             }
         }
 

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2023 Ternopol Leonid.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
+ */
+
 val kspVersion: String by project
 
 plugins {
@@ -24,24 +29,20 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
 
-    implementation("com.squareup:kotlinpoet:1.10.2")
-    implementation("com.squareup:kotlinpoet-ksp:1.10.2")
+    implementation("com.squareup:kotlinpoet:1.12.0")
+    implementation("com.squareup:kotlinpoet-ksp:1.12.0")
 
     implementation("com.google.devtools.ksp:symbol-processing-api:$kspVersion")
 
     implementation(project(":annotations"))
 
-    implementation ("com.google.auto.service:auto-service:1.0.1")
+    implementation("com.google.auto.service:auto-service:1.0.1")
     kapt("com.google.auto.service:auto-service:1.0.1")
+
+    testImplementation(kotlin("test"))
+    testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.4.9")
 }
 
 sourceSets.main {
     java.srcDirs("src/main/kotlin")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        freeCompilerArgs = freeCompilerArgs +
-                listOf("-opt-in=kotlin.RequiresOptIn", "-opt-in=com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview")
-    }
 }

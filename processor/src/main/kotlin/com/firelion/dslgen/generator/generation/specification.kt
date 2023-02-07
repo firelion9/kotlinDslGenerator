@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -8,13 +8,6 @@ package com.firelion.dslgen.generator.generation
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.processFunction
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.Data
-import com.firelion.dslgen.generator.util.GeneratedDslInfo
-import com.firelion.dslgen.generator.util.findConstructionFunction
-import com.firelion.dslgen.generator.util.getClassDeclaration
-import com.firelion.dslgen.generator.util.getSpecificationUniqueIdentifier
-import com.firelion.dslgen.generator.util.isArrayType
-import com.firelion.dslgen.generator.util.resolveEndTypeArguments
 import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.*
@@ -27,8 +20,8 @@ import com.squareup.kotlinpoet.ksp.writeTo
  * Generates extra subDSLs for specified type arguments.
  *
  * For example, if some function has argument of type Pair<List<A>, B>,
- * an extra subDSL for `Pair<List<A>, B>.first(builder: Context$List<A>.() -> Unit)`
- * would be generated (actual names would be different)
+ * an extra subDSL for `Context$Pair<List<A>, B>.first(builder: Context$List<A>.() -> Unit)`
+ * would be generated (actual names would be different).
  *
  * @param [newTypeParameters] are new type parameters
  * @param [returnTypeArguments] are type arguments for function's return type which may use [newTypeParameters]
@@ -85,10 +78,16 @@ internal fun generateSpecification(
             .parameterizedBy(returnTypeArguments.map { it.toTypeNameFix(typeParameterResolver) })
             .copy(annotations = listOf(dslMarker))
 
+    val (typeMapping, extraParameters) = inferTypeParameters(
+        newTypeParameters,
+        generatedDslInfo.returnType.replace(returnTypeArguments),
+        generatedDslInfo.typeParameters,
+        listOf(),
+        generatedDslInfo.returnType,
+        data,
+    )
 
-    val typeMapping =
-        generatedDslInfo.typeParameters.asSequence().zip(returnTypeArguments.asSequence().map { it.type!!.resolve() })
-            .toMap()
+    require(extraParameters.isEmpty()) { "some old parameters can't be exposed through new ones" }
 
     generatedDslInfo.parameters.values.forEach { param ->
         fileSpecBuilder.generateSpecificationFor(

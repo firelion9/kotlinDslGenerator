@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -54,69 +54,38 @@ internal class GeneratedDslParameterInfo(
  * Collection of well-known useful [KSType]s
  */
 internal class UsefulTypes(resolver: Resolver) {
-    val ksArray: KSType
-    val ksBooleanArray: KSType
-    val ksByteArray: KSType
-    val ksCharArray: KSType
-    val ksShortArray: KSType
-    val ksIntArray: KSType
-    val ksFloatArray: KSType
-    val ksLongArray: KSType
-    val ksDoubleArray: KSType
+    val ksArray: KSType = resolver.builtIns.arrayType
+    val ksBooleanArray: KSType = resolver.ksTypeOf<BooleanArray>()
+    val ksByteArray: KSType = resolver.ksTypeOf<ByteArray>()
+    val ksCharArray: KSType = resolver.ksTypeOf<CharArray>()
+    val ksShortArray: KSType = resolver.ksTypeOf<ShortArray>()
+    val ksIntArray: KSType = resolver.ksTypeOf<IntArray>()
+    val ksFloatArray: KSType = resolver.ksTypeOf<FloatArray>()
+    val ksLongArray: KSType = resolver.ksTypeOf<LongArray>()
+    val ksDoubleArray: KSType = resolver.ksTypeOf<DoubleArray>()
 
-    val ksIterable: KSType
-    val ksMutableIterable: KSType
-    val ksCollection: KSType
-    val ksMutableCollection: KSType
-    val ksList: KSType
-    val ksMutableList: KSType
-    val ksArrayList: KSType
-    val ksSet: KSType
-    val ksMutableSet: KSType
-    val ksHashSet: KSType
-    val ksSequence: KSType
-    val ksMap: KSType
-    val ksMutableMap: KSType
-    val ksHashMap: KSType
+    val ksIterable: KSType = resolver.builtIns.iterableType
+    val ksMutableIterable: KSType = resolver.ksTypeOf<MutableIterable<*>>()
+    val ksCollection: KSType = resolver.ksTypeOf<Collection<*>>()
+    val ksMutableCollection: KSType = resolver.ksTypeOf<MutableCollection<*>>()
+    val ksList: KSType = resolver.ksTypeOf<List<*>>()
+    val ksMutableList: KSType = resolver.ksTypeOf<MutableList<*>>()
+    val ksArrayList: KSType = resolver.ksTypeOf<ArrayList<*>>()
+    val ksSet: KSType = resolver.ksTypeOf<Set<*>>()
+    val ksMutableSet: KSType = resolver.ksTypeOf<MutableSet<*>>()
+    val ksHashSet: KSType = resolver.ksTypeOf<HashSet<*>>()
+    val ksSequence: KSType = resolver.ksTypeOf<Sequence<*>>()
+    val ksMap: KSType = resolver.ksTypeOf<Map<*, *>>()
+    val ksMutableMap: KSType = resolver.ksTypeOf<MutableMap<*, *>>()
+    val ksHashMap: KSType = resolver.ksTypeOf<HashMap<*, *>>()
 
-    val ksGeneratedDsl: KSType
-    val ksUseAlternativeConstruction: KSType
-    val ksUseDefaultConstructions: KSType
+    val ksGeneratedDsl: KSType = resolver.ksTypeOf<GenerateDsl>()
+    val ksUseDefaultConstructions: KSType = resolver.ksTypeOf<UseDefaultConstructions>()
+    val ksUseAlternativeConstruction: KSType = resolver.ksTypeOf<UseAlternativeConstruction>()
 
-    val ksVoid: KSType
+    val ksVoid: KSType = resolver.ksTypeOf<Void>()
 
-    init {
-        ksArray = resolver.builtIns.arrayType
-        ksBooleanArray = resolver.ksTypeOf<BooleanArray>()
-        ksByteArray = resolver.ksTypeOf<ByteArray>()
-        ksCharArray = resolver.ksTypeOf<CharArray>()
-        ksShortArray = resolver.ksTypeOf<ShortArray>()
-        ksIntArray = resolver.ksTypeOf<IntArray>()
-        ksFloatArray = resolver.ksTypeOf<FloatArray>()
-        ksLongArray = resolver.ksTypeOf<LongArray>()
-        ksDoubleArray = resolver.ksTypeOf<DoubleArray>()
-
-        ksIterable = resolver.builtIns.iterableType
-        ksMutableIterable = resolver.ksTypeOf<MutableIterable<*>>()
-        ksCollection = resolver.ksTypeOf<Collection<*>>()
-        ksMutableCollection = resolver.ksTypeOf<MutableCollection<*>>()
-        ksList = resolver.ksTypeOf<List<*>>()
-        ksMutableList = resolver.ksTypeOf<MutableList<*>>()
-        ksArrayList = resolver.ksTypeOf<ArrayList<*>>()
-        ksSet = resolver.ksTypeOf<Set<*>>()
-        ksMutableSet = resolver.ksTypeOf<MutableSet<*>>()
-        ksHashSet = resolver.ksTypeOf<HashSet<*>>()
-        ksSequence = resolver.ksTypeOf<Sequence<*>>()
-        ksMap = resolver.ksTypeOf<Map<*, *>>()
-        ksMutableMap = resolver.ksTypeOf<MutableMap<*, *>>()
-        ksHashMap = resolver.ksTypeOf<HashMap<*, *>>()
-
-        ksGeneratedDsl = resolver.ksTypeOf<GenerateDsl>()
-        ksUseDefaultConstructions = resolver.ksTypeOf<UseDefaultConstructions>()
-        ksUseAlternativeConstruction = resolver.ksTypeOf<UseAlternativeConstruction>()
-
-        ksVoid = resolver.ksTypeOf<Void>()
-    }
+    val ksNullableAny: KSType = resolver.ksTypeOf<Any>().makeNullable()
 
     private inline fun <reified T> Resolver.ksTypeOf() =
         getClassDeclarationByName<T>()!!.asStarProjectedType()
