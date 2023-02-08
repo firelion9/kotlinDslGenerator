@@ -5,12 +5,9 @@
 
 package com.firelion.dslgen.generator.util
 
+import com.firelion.dslgen.generator.generation.SUPPRESS
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.asClassName
-
-@Suppress("PrivatePropertyName")
-private val SUPPRESS = Suppress::class.asClassName()
 
 /**
  * Merges annotations in [FunSpec.Builder].
@@ -20,7 +17,7 @@ private val SUPPRESS = Suppress::class.asClassName()
 internal fun FunSpec.Builder.mergeAnnotations() = apply {
     val suppress = annotations.asSequence().filter { it.typeName == SUPPRESS }.flatMap { it.members }.toSet()
 
-    if (suppress.size > 1) {
+    if (suppress.isNotEmpty()) {
         annotations.removeAll { it.typeName == SUPPRESS }
         annotations.add(
             AnnotationSpec.builder(SUPPRESS)

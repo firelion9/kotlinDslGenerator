@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -11,6 +11,11 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
 import java.util.*
 import kotlin.contracts.InvocationKind
+
+/**
+ * [Suppress] annotation [ClassName].
+ */
+internal val SUPPRESS = ClassName(Suppress::class.java.packageName, Suppress::class.java.simpleName)
 
 /**
  * Name prefix for initialization info fields in DSL context classes.
@@ -59,4 +64,4 @@ internal val LINKED_LIST = ClassName(LinkedList::class.java.packageName, LinkedL
 /**
  * Annotation that suppress `unchecked cast` warning.
  */
-internal val UNCHECKED_CAST = AnnotationSpec.builder(Suppress::class).addMember("\"UNCHECKED_CAST\"").build()
+internal val UNCHECKED_CAST = AnnotationSpec.builder(SUPPRESS).addMember("\"UNCHECKED_CAST\"").build()
