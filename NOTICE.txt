@@ -1,7 +1,0 @@
-Kotlin DSL generator
-Copyright (c) 2022 Ternopol Leonid.
-
-This product uses those libraries distributed under Apache 2.0 License:
-* com.squareup:kotlinpoet and com.squareup:kotlinpoet-ksp by Squareup (https://square.github.io/kotlinpoet/)
-* com.google.devtools.ksp:symbol-processing-api by Google (https://github.com/google/ksp)
-* com.google.auto.service:auto-service by Google (https://github.com/google/auto/tree/master/service)
