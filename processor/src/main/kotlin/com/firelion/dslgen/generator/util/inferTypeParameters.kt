@@ -394,7 +394,6 @@ private fun matchTypeArgs(
  *
  *   result: E variance modifier `out` (covariant)
  */
-@Suppress("KotlinConstantConditions") // Kotlin 1.7.10: last branch condition is always true
 private fun combineSumVariances(v1: Variance, v2: Variance) = when {
     v1 == Variance.STAR || v2 == Variance.STAR -> Variance.STAR
 
@@ -420,7 +419,6 @@ private fun combineSumVariances(v1: Variance, v2: Variance) = when {
  *
  *   result modifier is `out` (covariant)
  */
-@Suppress("KotlinConstantConditions") // Kotlin 1.7.10: last branch condition is always true
 private fun combineMultiplyVariances(v1: Variance, v2: Variance) = when {
     v1 == Variance.STAR || v2 == Variance.STAR -> Variance.STAR
 

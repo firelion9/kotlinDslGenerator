@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -86,7 +86,7 @@ internal fun readGenerationParametersAnnotation(
                     if (function.parameters.size != 1)
                         logger.warn(
                             "Mono-parameter DSL can be generated only for single-parameter functions. " +
-                                    "This warning would be treated as error when mono-parameter DSLs comes suppoted.",
+                                    "This warning would be treated as error when mono-parameter DSLs come supported.",
                             arg
                         )
                 }
