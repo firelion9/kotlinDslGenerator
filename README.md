@@ -10,6 +10,7 @@ to your build.gradle.kts file
 (for build.gradle change `apply(plugin = "com.firelion.dslgen")`
 to `apply(plugin: "com.firelion.dslgen")`):
 
+<!--- @hardlink#001 (version in gradlePlugin dependency) -->
 ```kotlin
 buildscript {
     repositories {
@@ -18,7 +19,7 @@ buildscript {
     }
     dependencies {
 //        ...         
-        classpath("com.firelion.dslgen:gradlePlugin:0.2.0")
+      classpath("com.firelion.dslgen:gradlePlugin:0.3.0")
     }
 }
 

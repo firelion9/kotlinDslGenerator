@@ -4,4 +4,4 @@
  */
 
 group = "com.firelion.dslgen"
-version = "0.3.0" // @hardlink#001 /gradlePlugin/src/main/kotlin/com/firelion/dslgen/DslGenPlugin.kt:15
+version = "0.3.0" // @hardlink#001
