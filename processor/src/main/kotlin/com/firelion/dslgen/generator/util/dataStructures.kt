@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.util
 import com.firelion.dslgen.annotations.GenerateDsl
 import com.firelion.dslgen.annotations.UseAlternativeConstruction
 import com.firelion.dslgen.annotations.UseDefaultConstructions
+import com.firelion.dslgen.strategy.ArrayBackingPropertyInitializers
 import com.firelion.dslgen.strategy.NamingStrategy
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -15,6 +16,7 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.squareup.kotlinpoet.CodeBlock
 
 /**
  * Stores references to some useful utilities and generated DSL data.
@@ -29,6 +31,7 @@ internal class Data(
     val generatedDsls: MutableMap<String, GeneratedDslInfo> = mutableMapOf(),
     val generatedSpecifications: MutableSet<String> = mutableSetOf(),
     val namingStrategy: NamingStrategy = NamingStrategy.Legacy,
+    val arrayBackingPropertyInitializer: CodeBlock = ArrayBackingPropertyInitializers.LINKED_LIST_INITIALIZER,
 )
 
 /**

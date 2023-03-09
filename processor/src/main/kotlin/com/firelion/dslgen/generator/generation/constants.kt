@@ -9,7 +9,6 @@ import com.firelion.dslgen.annotations.callDefaultImplMarker
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
-import java.util.*
 import kotlin.contracts.InvocationKind
 
 /**
@@ -45,11 +44,6 @@ internal val EXPERIMENTAL_CONTRACTS_OPT_IN = AnnotationSpec
  * [InvocationKind.EXACTLY_ONCE] from contracts API.
  */
 internal val EXACTLY_ONCE_NAME = MemberName(ClassName("kotlin.contracts", "InvocationKind"), "EXACTLY_ONCE")
-
-/**
- * [LinkedList], used as temporary storage for array DSL parameters.
- */
-internal val LINKED_LIST = ClassName(LinkedList::class.java.packageName, LinkedList::class.java.simpleName)
 
 /**
  * Annotation that suppress `unchecked cast` warning.

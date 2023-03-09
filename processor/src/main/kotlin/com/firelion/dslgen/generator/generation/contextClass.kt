@@ -46,7 +46,7 @@ internal fun FileSpec.Builder.generateContextClass(
                     )
                         .addAnnotation(PublishedApi::class)
                         .mutable()
-                        .initializer("%T()", LINKED_LIST)
+                        .initializer(data.arrayBackingPropertyInitializer)
                         .build()
                 )
             } else {
