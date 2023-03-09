@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -27,7 +27,7 @@ internal fun FileSpec.Builder.generateEntryFunction(
 ) {
     val paramName = "builderAction"
     FunSpec.builder(generationParameters.functionName!!)
-        .makeInlineIfRequested(generationParameters, suppressWarning = false)
+        .makeInlineIfRequested(generationParameters, hasSomethingToInline = true)
         .addAnnotation(EXPERIMENTAL_CONTRACTS_OPT_IN)
         .addAnnotation(dslMarker)
         .addTypeVariables(typeVariables)

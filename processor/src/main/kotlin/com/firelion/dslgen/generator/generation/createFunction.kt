@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -7,7 +7,6 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.resolveActualType
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -33,8 +32,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
     FunSpec.builder(CREATE)
         .makeInlineIfRequested(
             generationParameters,
-            suppressWarning = hasReifiedTypeParameters || generationParameters.makeInline,
-            forceInline = hasReifiedTypeParameters
+            hasSomethingToInline = hasReifiedTypeParameters
         )
         .addModifiers(KModifier.INTERNAL)
         .addAnnotation(PublishedApi::class)
@@ -45,7 +43,9 @@ internal fun FileSpec.Builder.generateCreateFunction(
             val requiresPostProcess = data.allowDefaultArguments && functionParameters.any { it.first.hasDefault }
 
             functionParameters.forEachIndexed { index, (param, _) ->
-                if (!(param.hasDefault && data.allowDefaultArguments) && !param.resolveActualType(data).isArrayType(data))
+                if (!(param.hasDefault && data.allowDefaultArguments) && !param.resolveActualType(data)
+                        .isArrayType(data)
+                )
                     addCode(checkInitialization(index, param.name!!.asString()))
             }
 
@@ -61,7 +61,8 @@ internal fun FileSpec.Builder.generateCreateFunction(
                             val name = "\$\$${param.name!!.asString()}\$\$"
 
                             fun addWithToArray(typeName: String) =
-                                CodeBlock.of((if (param.isVararg) "*" else "") + "%N.to${typeName}Array()", name).toString()
+                                CodeBlock.of((if (param.isVararg) "*" else "") + "%N.to${typeName}Array()", name)
+                                    .toString()
 
                             when {
                                 data.usefulTypes.ksArray.isAssignableFrom(type) ->

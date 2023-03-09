@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -28,8 +28,11 @@ import kotlin.reflect.KClass
  *        specifies if annotated one-parameter function's DSL
  *        should be replaced with its parameter's DSL.
  *
- * @param makeInline __(CURRENTLY TREATED AS true)__
- *        if `true`, all associated functions would be generated with `inline` modifier.
+ * @param makeInline
+ *        if `false`, `inline` modifier will be added only to generated functions
+ *        with `reified` type parameters or builder lambdas,
+ *        otherwise it will be added to all generated functions.
+ *        Default is `true`.
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CONSTRUCTOR)
 @Retention(AnnotationRetention.SOURCE)

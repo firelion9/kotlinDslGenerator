@@ -5,20 +5,7 @@
 
 package com.firelion.dslgen
 
-import org.intellij.lang.annotations.Language
 import kotlin.test.Test
-
-@Language("kotlin")
-private const val BASE_FILE_HEADER: String = """
-            import com.firelion.dslgen.annotations.*
-            import kotlin.test.*
-            
-            
-            @DslMarker
-            @Retention(AnnotationRetention.BINARY)
-            @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
-            annotation class Dsl
-            """
 
 internal class ModifierAnnotationTests {
     @Test

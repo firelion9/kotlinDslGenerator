@@ -94,12 +94,6 @@ internal fun readGenerationParametersAnnotation(
 
             "makeInline" -> {
                 makeInline = arg.value as Boolean
-
-                if (!makeInline)
-                    logger.warn(
-                        "Non-inline DSLs are not supported yet. makeInline = false would be ignored",
-                        arg
-                    )
             }
         }
     }

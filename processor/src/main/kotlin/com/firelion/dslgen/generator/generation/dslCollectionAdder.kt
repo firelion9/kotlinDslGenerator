@@ -79,7 +79,7 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
 
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
-        .makeInlineIfRequested(generationParameters, suppressWarning = false)
+        .makeInlineIfRequested(generationParameters, hasSomethingToInline = true)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
         .addParameter(
