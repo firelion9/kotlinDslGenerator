@@ -18,12 +18,12 @@ internal fun List<TypeVariableName>.filterUsed(usedParameters: Set<TypeVariableN
 /**
  * Replaces unused (not presented in [usedParameters]) type parameters with stars.
  */
-internal fun TypeName.startProjectUnusedParameters(usedParameters: Set<TypeVariableName>): TypeName =
+internal fun TypeName.starProjectUnusedParameters(usedParameters: Set<TypeVariableName>): TypeName =
     when (this) {
         is TypeVariableName -> if (this in usedParameters) this else STAR
         is ParameterizedTypeName -> this.copy(
             typeArguments = this.typeArguments.map {
-                it.startProjectUnusedParameters(usedParameters)
+                it.starProjectUnusedParameters(usedParameters)
             }
         )
 

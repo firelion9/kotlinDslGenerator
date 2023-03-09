@@ -83,7 +83,7 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
         .addAnnotation(dslMarker)
         .makeInlineIfRequested(generationParameters, hasSomethingToInline = true)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
-        .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
+        .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .addParameter(
             "\$builder\$",
             LambdaTypeName.get(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -7,7 +7,6 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.resolveActualType
 import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
@@ -56,7 +55,7 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
         .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .addTypeVariables(extraTypeParameters.toTypeVariableNames(resolver))
-        .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
+        .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .apply {
             paramsWithType.forEach { (param, type) ->
                 val kpType = type.replaceTypeParameters(inferredTypes, data).toTypeNameFix(resolver)

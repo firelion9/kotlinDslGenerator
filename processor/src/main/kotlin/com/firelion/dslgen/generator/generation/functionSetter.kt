@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -7,7 +7,6 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.makeInlineIfRequested
 import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
@@ -39,7 +38,7 @@ internal fun FileSpec.Builder.generateFunctionSetter(
         .addAnnotation(dslMarker)
         .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
-        .receiver(contextClassName.startProjectUnusedParameters(usedTypeVariables))
+        .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .addParameter(name, backingPropertyTypeName)
         .apply {
             if (requiresNoInitialization)
