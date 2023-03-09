@@ -39,7 +39,7 @@ internal fun FileSpec.Builder.generateFunctionSetter(
         .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
-        .addParameter(name, backingPropertyTypeName)
+        .addParameterProxy(name, backingPropertyTypeName, backingPropertyType, data)
         .apply {
             if (requiresNoInitialization)
                 addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))

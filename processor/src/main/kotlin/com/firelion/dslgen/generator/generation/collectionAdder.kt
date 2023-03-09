@@ -38,7 +38,7 @@ internal fun FileSpec.Builder.generateCollectionAdder(
         .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
-        .addParameter("element", elementTypeName)
+        .addParameterProxy("element", elementTypeName, elementType, data)
         .apply {
             addCode(initialize(backingPropertyIndex))
             addCode(

@@ -58,9 +58,10 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .apply {
             paramsWithType.forEach { (param, type) ->
-                val kpType = type.replaceTypeParameters(inferredTypes, data).toTypeNameFix(resolver)
+                val ksType = type.replaceTypeParameters(inferredTypes, data)
+                val kpType = ksType.toTypeNameFix(resolver)
 
-                addParameter(param.name!!.asString(), kpType)
+                addParameterProxy(param.name!!.asString(), kpType, ksType, data)
             }
         }
         .apply {
@@ -70,9 +71,11 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
             addCode(initialize(backingPropertyIndex))
             addCode(
                 "this.%N = %N(${
-                    exitFunction.parameters.joinToString(prefix = "\n",
+                    exitFunction.parameters.joinToString(
+                        prefix = "\n",
                         separator = ",\n",
-                        postfix = "\n") { if (it.isVararg) "*%N" else "%N" }
+                        postfix = "\n"
+                    ) { if (it.isVararg) "*%N" else "%N" }
                 })",
                 "\$\$$backingPropertyName\$\$",
                 exitFunction.memberName(),

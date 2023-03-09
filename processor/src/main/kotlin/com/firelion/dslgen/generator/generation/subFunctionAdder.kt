@@ -57,9 +57,10 @@ internal fun FileSpec.Builder.generateSubFunctionAdder(
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .apply {
             paramsWithType.forEach { (param, type) ->
-                val kpType = type.replaceTypeParameters(inferredTypes, data).toTypeNameFix(resolver)
+                val ksType = type.replaceTypeParameters(inferredTypes, data)
+                val kpType = ksType.toTypeNameFix(resolver)
 
-                addParameter(param.name!!.asString(), kpType)
+                addParameterProxy(param.name!!.asString(), kpType, ksType, data)
             }
         }
         .apply {

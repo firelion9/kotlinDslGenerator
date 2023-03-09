@@ -49,7 +49,12 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
                 setter(
                     FunSpec.setterBuilder()
                         .makeInlineIfRequested(generationParameters)
-                        .addParameter("value", backingPropertyType.toTypeNameFix(typeParameterResolver))
+                        .addParameterProxy(
+                            "value",
+                            backingPropertyType.toTypeNameFix(typeParameterResolver),
+                            backingPropertyType,
+                            data
+                        )
                         .apply {
                             if (requiresNoInitialization)
                                 addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))

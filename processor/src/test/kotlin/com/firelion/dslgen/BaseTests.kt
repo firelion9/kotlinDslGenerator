@@ -160,4 +160,29 @@ internal class BaseTests {
             """.trimIndent()
         )
     }
+
+    @Test
+    fun `test lambda parameters`() {
+        compileWithKspAndRun(
+            """
+            $BASE_FILE_HEADER
+            
+            @GenerateDsl(Dsl::class, functionName = "exec")
+            fun execute(lambda: () -> Unit) = lambda()
+            
+            fun main() {
+                var a = 0
+                exec {
+                    lambda {
+                        a += 1
+                    }
+                }
+            
+                assertEquals(1, a)
+            
+                println("Generated method executed successfully")
+            }
+            """.trimIndent()
+        )
+    }
 }
