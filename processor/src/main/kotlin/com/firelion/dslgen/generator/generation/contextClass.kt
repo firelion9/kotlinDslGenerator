@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -7,10 +7,6 @@ package com.firelion.dslgen.generator.generation
 
 import com.firelion.dslgen.GenerationParameters
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.generator.util.Data
-import com.firelion.dslgen.generator.util.backingPropertyInitializer
-import com.firelion.dslgen.generator.util.backingPropertyType
-import com.firelion.dslgen.generator.util.isArrayType
 import com.firelion.dslgen.util.divideAndRoundUp
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
@@ -44,7 +40,7 @@ internal fun FileSpec.Builder.generateContextClass(
 
                 addProperty(
                     PropertySpec.Companion.builder(
-                        "\$\$${it.name!!.asString()}\$\$",
+                        data.namingStrategy.backingPropertyName(it.name!!.asString()),
                         MUTABLE_LIST.parameterizedBy(elementTypeName),
                         KModifier.INTERNAL
                     )
@@ -56,7 +52,7 @@ internal fun FileSpec.Builder.generateContextClass(
             } else {
                 addProperty(
                     PropertySpec.Companion.builder(
-                        "\$\$${it.name!!.asString()}\$\$",
+                        data.namingStrategy.backingPropertyName(it.name!!.asString()),
                         type.backingPropertyType().toTypeNameFix(typeParameterResolver),
                         KModifier.INTERNAL
                     )
@@ -72,7 +68,7 @@ internal fun FileSpec.Builder.generateContextClass(
         repeat(functionParameters.size divideAndRoundUp Int.SIZE_BITS) {
             addProperty(
                 PropertySpec.builder(
-                    INITIALIZATION_INFO_PREFIX + it,
+                    data.namingStrategy.initializationInfoName(it),
                     INT,
                     KModifier.INTERNAL
                 )

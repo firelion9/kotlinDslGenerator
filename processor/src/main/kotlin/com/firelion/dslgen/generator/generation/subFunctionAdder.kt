@@ -64,7 +64,7 @@ internal fun FileSpec.Builder.generateSubFunctionAdder(
             }
         }
         .apply {
-            addCode(initialize(backingPropertyIndex))
+            addCode(initialize(backingPropertyIndex, data))
             addCode(
                 "this.%N.add(%N(${
                     exitFunction.parameters.joinToString(

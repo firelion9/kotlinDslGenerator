@@ -19,7 +19,7 @@ import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 internal fun FileSpec.Builder.generateCollectionAdder(
     name: String,
     elementType: KSType,
-    backingPropertyName: String,
+    parameterName: String,
     backingPropertyIndex: Int,
     typeVariables: List<TypeVariableName>,
     contextClassName: TypeName,
@@ -40,10 +40,10 @@ internal fun FileSpec.Builder.generateCollectionAdder(
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .addParameterProxy("element", elementTypeName, elementType, data)
         .apply {
-            addCode(initialize(backingPropertyIndex))
+            addCode(initialize(backingPropertyIndex, data))
             addCode(
                 "this.%N.add(element)\n",
-                "\$\$$backingPropertyName\$\$",
+                data.namingStrategy.backingPropertyName(parameterName),
             )
         }
         .build()

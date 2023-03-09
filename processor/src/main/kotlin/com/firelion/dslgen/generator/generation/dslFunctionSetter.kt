@@ -23,7 +23,7 @@ import com.squareup.kotlinpoet.ksp.TypeParameterResolver
  */
 internal fun FileSpec.Builder.generateDslFunctionSetter(
     name: String,
-    backingPropertyName: String,
+    parameterName: String,
     backingPropertyType: KSType,
     backingPropertyIndex: Int,
     exitFunction: KSFunctionDeclaration,
@@ -77,15 +77,16 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
 
     val usedTypeVariables = innerContextTypeName.usedTypeVariables()
 
-    addImport(innerContextClassName.packageName, CREATE)
+    addImport(innerContextClassName.packageName, data.namingStrategy.createFunctionName)
 
+    val lambdaName = data.namingStrategy.builderLambdaName(name)
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
         .makeInlineIfRequested(generationParameters, hasSomethingToInline = true)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .addParameter(
-            "\$builder\$",
+            lambdaName,
             LambdaTypeName.get(
                 receiver = innerContextTypeName,
                 returnType = UNIT
@@ -93,14 +94,15 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
         )
         .apply {
             if (requiresNoInitialization)
-                addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))
+                addCode(checkNoInitialization(backingPropertyIndex, parameterName, data))
 
-            addCode(initialize(backingPropertyIndex))
+            addCode(initialize(backingPropertyIndex, data))
             addCode(
-                "this.%N = %T()\n.apply {`\$builder\$`() }\n.%N()\n",
-                "\$\$$backingPropertyName\$\$",
+                "this.%N = %T()\n.apply {%N() }\n.%N()\n",
+                data.namingStrategy.backingPropertyName(parameterName),
                 innerContextTypeName.copy(annotations = emptyList()),
-                CREATE
+                lambdaName,
+                data.namingStrategy.createFunctionName
             )
         }
         .build()

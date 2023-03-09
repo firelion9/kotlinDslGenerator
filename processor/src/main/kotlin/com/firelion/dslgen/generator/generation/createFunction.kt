@@ -29,7 +29,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
 ) {
     val hasReifiedTypeParameters = typeVariables.any { it.isReified }
 
-    FunSpec.builder(CREATE)
+    FunSpec.builder(data.namingStrategy.createFunctionName)
         .makeInlineIfRequested(
             generationParameters,
             hasSomethingToInline = hasReifiedTypeParameters
@@ -46,7 +46,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
                 if (!(param.hasDefault && data.allowDefaultArguments) && !param.resolveActualType(data)
                         .isArrayType(data)
                 )
-                    addCode(checkInitialization(index, param.name!!.asString()))
+                    addCode(checkInitialization(index, param.name!!.asString(), data))
             }
 
             if (requiresPostProcess) addCode("%M()\n", POST_PROCESSOR_MARKER_NAME)

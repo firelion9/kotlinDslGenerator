@@ -8,6 +8,7 @@ package com.firelion.dslgen.generator.util
 import com.firelion.dslgen.annotations.GenerateDsl
 import com.firelion.dslgen.annotations.UseAlternativeConstruction
 import com.firelion.dslgen.annotations.UseDefaultConstructions
+import com.firelion.dslgen.strategy.NamingStrategy
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
@@ -27,6 +28,7 @@ internal class Data(
     val allowDefaultArguments: Boolean,
     val generatedDsls: MutableMap<String, GeneratedDslInfo> = mutableMapOf(),
     val generatedSpecifications: MutableSet<String> = mutableSetOf(),
+    val namingStrategy: NamingStrategy = NamingStrategy.Legacy,
 )
 
 /**

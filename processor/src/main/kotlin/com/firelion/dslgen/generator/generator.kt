@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -11,11 +11,10 @@ import com.firelion.dslgen.annotations.UseAlternativeConstruction
 import com.firelion.dslgen.annotations.UseDefaultConstructions
 import com.firelion.dslgen.generator.generation.*
 import com.firelion.dslgen.generator.util.*
-import com.firelion.dslgen.readGenerationParametersAnnotation
-import com.firelion.dslgen.util.processingException
-import com.firelion.dslgen.generator.util.resolveActualType
 import com.firelion.dslgen.logging
+import com.firelion.dslgen.readGenerationParametersAnnotation
 import com.firelion.dslgen.util.ExtensionKSValueParameter
+import com.firelion.dslgen.util.processingException
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.isConstructor
 import com.google.devtools.ksp.symbol.*
@@ -76,6 +75,8 @@ private fun processFunction0(
 
     val functionReturnType: KSType by lazy { function.returnType!!.resolve() }
 
+    val contextClassNameStr = data.namingStrategy.dslContextClassName(identifier, function.simpleName.asString())
+
     if (identifier in data.generatedDsls) {
 
         data.logger.logging(function) { "DSL with identifier $identifier is already generated in this session" }
@@ -96,7 +97,7 @@ private fun processFunction0(
 
         return ClassName(pkg, generatedDsl.contextClassName)
     } else {
-        val dec = data.resolver.getClassDeclarationByName("$pkg.\$Context\$$identifier")
+        val dec = data.resolver.getClassDeclarationByName("$pkg.$contextClassNameStr")
 
         if (dec != null) {
             data.logger.logging(function) { "find DSL $identifier" }
@@ -108,10 +109,10 @@ private fun processFunction0(
                 dec.declarations
                     .filterIsInstance<KSPropertyDeclaration>()
                     .filterNot {
-                        it.simpleName.asString().startsWith(INITIALIZATION_INFO_PREFIX)
+                        data.namingStrategy.isInitializationInfoProperty(it.simpleName.asString())
                     }
                     .mapIndexed { idx, it ->
-                        it.simpleName.asString().removeSurrounding("\$\$") to
+                        data.namingStrategy.recoverParameterName(it.simpleName.asString()) to
                                 GeneratedDslParameterInfo(
                                     it.simpleName.asString(),
                                     idx,
@@ -154,7 +155,7 @@ private fun processFunction0(
         }
             ?: parentGenerationParameters!!.copy(
                 functionName = null,
-                contextClassName = "\$Context\$$identifier",
+                contextClassName = contextClassNameStr,
                 monoParameter = parentGenerationParameters.monoParameter && (function.parameters.size == 1)
             )
 
@@ -174,7 +175,7 @@ private fun processFunction0(
 
     val fileBuilder = FileSpec.builder(
         pkg,
-        "\$Dsl\$$identifier"
+        data.namingStrategy.dslFileName(identifier, contextClassNameStr, function.simpleName.asString())
     )
 
     val generatedDsl = GeneratedDslInfo(
@@ -421,7 +422,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     if (isArrayType) {
         if (defaultsAnnotationArgMap?.get(UseDefaultConstructions::useFunctionAdder) != false) {
             generateCollectionAdder(
-                "element",
+                data.namingStrategy.elementAdderName(property.first.name!!.asString()),
                 elementType,
                 property.first.name!!.asString(),
                 propertyIndex,

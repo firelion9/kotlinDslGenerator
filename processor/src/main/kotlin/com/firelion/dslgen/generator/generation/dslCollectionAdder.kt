@@ -24,7 +24,7 @@ import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 internal fun FileSpec.Builder.generateDslCollectionAdder(
     name: String,
     elementType: KSType,
-    backingPropertyName: String,
+    parameterName: String,
     backingPropertyIndex: Int,
     itemFunction: KSFunctionDeclaration,
     generationParameters: GenerationParameters,
@@ -75,7 +75,9 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
 
     val usedTypeVariables = elementContextTypeName.usedTypeVariables()
 
-    addImport(elementContextClassName.packageName, CREATE)
+    addImport(elementContextClassName.packageName, data.namingStrategy.createFunctionName)
+
+    val lambdaName = data.namingStrategy.builderLambdaName(name)
 
     FunSpec.builder(name)
         .addAnnotation(dslMarker)
@@ -83,19 +85,20 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .addParameter(
-            "\$builder\$",
+            lambdaName,
             LambdaTypeName.get(
                 receiver = elementContextTypeName,
                 returnType = UNIT
             )
         )
         .apply {
-            addCode(initialize(backingPropertyIndex))
+            addCode(initialize(backingPropertyIndex, data))
             addCode(
-                "this.%N.add(%T().apply {`\$builder\$`() }.%N())\n",
-                "\$\$$backingPropertyName\$\$",
+                "this.%N.add(%T().apply {%N() }.%N())\n",
+                data.namingStrategy.backingPropertyName(parameterName),
                 elementContextTypeName.copy(annotations = emptyList()),
-                CREATE
+                lambdaName,
+                data.namingStrategy.createFunctionName
             )
         }
         .build()

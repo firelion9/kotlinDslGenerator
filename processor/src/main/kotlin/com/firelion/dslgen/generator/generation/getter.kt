@@ -18,7 +18,7 @@ import com.squareup.kotlinpoet.ksp.TypeParameterResolver
  */
 internal fun FileSpec.Builder.generateFunctionGetter(
     name: String,
-    backingPropertyName: String,
+    parameterName: String,
     backingPropertyType: KSType,
     backingPropertyIndex: Int,
     generationParameters: GenerationParameters,
@@ -40,14 +40,14 @@ internal fun FileSpec.Builder.generateFunctionGetter(
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .returns(returnType)
         .apply {
-            addCode(checkInitialization(backingPropertyIndex, backingPropertyName))
+            addCode(checkInitialization(backingPropertyIndex, parameterName, data))
 
             if (!backingPropertyType.isCastFromBackingFieldTypeSafe())
                 addAnnotation(UNCHECKED_CAST)
 
             val cast = backingPropertyType.castFromBackingFieldType(returnType)
 
-            addCode("return %N$cast\n", "\$\$$backingPropertyName\$\$")
+            addCode("return %N$cast\n", data.namingStrategy.backingPropertyName(parameterName))
         }
         .mergeAnnotations()
         .build()

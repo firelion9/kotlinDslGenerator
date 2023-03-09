@@ -23,30 +23,33 @@ internal fun FileSpec.Builder.generateEntryFunction(
     returnType: KSType,
     typeParameterResolver: TypeParameterResolver,
     dslMarker: AnnotationSpec,
-    @Suppress("UNUSED_PARAMETER") data: Data, // may be used in future for some reasons
+    data: Data,
 ) {
-    val paramName = "builderAction"
+    val lambdaName = data.namingStrategy.builderLambdaName(null)
+
     FunSpec.builder(generationParameters.functionName!!)
         .makeInlineIfRequested(generationParameters, hasSomethingToInline = true)
         .addAnnotation(EXPERIMENTAL_CONTRACTS_OPT_IN)
         .addAnnotation(dslMarker)
         .addTypeVariables(typeVariables)
-        .addParameter(paramName, LambdaTypeName.get(receiver = contextClassName, returnType = UNIT))
+        .addParameter(lambdaName, LambdaTypeName.get(receiver = contextClassName, returnType = UNIT))
         .returns(returnType.toTypeNameFix(typeParameterResolver))
         .apply {
             addCode(
                 """%M {
-                        |   callsInPlace(builderAction, %M)
+                        |   callsInPlace(%N, %M)
                         |}
                         |""".trimMargin(),
                 CONTRACT_NAME,
+                lambdaName,
                 EXACTLY_ONCE_NAME
             )
 
             addCode(
-                "return %T().apply { builderAction() }.%N()\n",
+                "return %T().apply { %N() }.%N()\n",
                 contextClassName.copy(annotations = emptyList()),
-                CREATE
+                lambdaName,
+                data.namingStrategy.createFunctionName
             )
         }
         .build()

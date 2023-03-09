@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2023 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -9,6 +9,7 @@ import org.objectweb.asm.*
 import java.io.File
 import kotlin.math.max
 
+// @hardlink#002
 private const val INITIALIZATION_INFO_NAME_PREFIX = "\$initializationInfo\$"
 
 private const val POST_PROCESS_MARKER_CLASS = "com/firelion/dslgen/annotations/PostProcessorTargetMarkerKt"

@@ -18,7 +18,7 @@ import com.squareup.kotlinpoet.ksp.TypeParameterResolver
  */
 internal fun FileSpec.Builder.generateFunctionSetter(
     name: String,
-    backingPropertyName: String,
+    parameterName: String,
     backingPropertyType: KSType,
     backingPropertyIndex: Int,
     requiresNoInitialization: Boolean,
@@ -42,10 +42,10 @@ internal fun FileSpec.Builder.generateFunctionSetter(
         .addParameterProxy(name, backingPropertyTypeName, backingPropertyType, data)
         .apply {
             if (requiresNoInitialization)
-                addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))
+                addCode(checkNoInitialization(backingPropertyIndex, parameterName, data))
 
-            addCode(initialize(backingPropertyIndex))
-            addCode("this.%N = %N\n", "\$\$$backingPropertyName\$\$", name)
+            addCode(initialize(backingPropertyIndex, data))
+            addCode("this.%N = %N\n", data.namingStrategy.backingPropertyName(parameterName), name)
         }
         .build()
         .run(this::addFunction)

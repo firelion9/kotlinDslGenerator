@@ -66,9 +66,9 @@ internal fun FileSpec.Builder.generateSubFunctionSetter(
         }
         .apply {
             if (requiresNoInitialization)
-                addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))
+                addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName, data))
 
-            addCode(initialize(backingPropertyIndex))
+            addCode(initialize(backingPropertyIndex, data))
             addCode(
                 "this.%N = %N(${
                     exitFunction.parameters.joinToString(

@@ -21,7 +21,7 @@ import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 internal fun FileSpec.Builder.generatePropertyAccessors(
     propertyAccessor: PropertyAccessor,
     name: String,
-    backingPropertyName: String,
+    parameterName: String,
     backingPropertyType: KSType,
     backingPropertyIndex: Int,
     requiresNoInitialization: Boolean,
@@ -57,10 +57,10 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
                         )
                         .apply {
                             if (requiresNoInitialization)
-                                addCode(checkNoInitialization(backingPropertyIndex, backingPropertyName))
+                                addCode(checkNoInitialization(backingPropertyIndex, parameterName, data))
 
-                            addCode(initialize(backingPropertyIndex))
-                            addCode("this.%N = value\n", "\$\$$backingPropertyName\$\$")
+                            addCode(initialize(backingPropertyIndex, data))
+                            addCode("this.%N = value\n", "\$\$$parameterName\$\$")
                         }
                         .build()
                 )
@@ -70,14 +70,14 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
             FunSpec.getterBuilder()
                 .makeInlineIfRequested(generationParameters)
                 .apply {
-                    addCode(checkInitialization(backingPropertyIndex, backingPropertyName))
+                    addCode(checkInitialization(backingPropertyIndex, parameterName, data))
 
                     if (!backingPropertyType.isCastFromBackingFieldTypeSafe())
                         addAnnotation(UNCHECKED_CAST)
 
                     val cast = backingPropertyType.castFromBackingFieldType(propertyType)
 
-                    addCode("return this.%N$cast\n", "\$\$$backingPropertyName\$\$")
+                    addCode("return this.%N$cast\n", data.namingStrategy.backingPropertyName(parameterName))
                 }
                 .mergeAnnotations()
                 .build()

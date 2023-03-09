@@ -18,16 +18,6 @@ import kotlin.contracts.InvocationKind
 internal val SUPPRESS = ClassName(Suppress::class.java.packageName, Suppress::class.java.simpleName)
 
 /**
- * Name prefix for initialization info fields in DSL context classes.
- */
-internal const val INITIALIZATION_INFO_PREFIX = "\$initializationInfo\$"
-
-/**
- * Name of `create` function.
- */
-internal const val CREATE = "\$create\$"
-
-/**
  * Annotation that suppress `nothing to inline` warning.
  */
 internal val NOTHING_TO_INLINE = AnnotationSpec.builder(Suppress::class).addMember("\"NOTHING_TO_INLINE\"").build()

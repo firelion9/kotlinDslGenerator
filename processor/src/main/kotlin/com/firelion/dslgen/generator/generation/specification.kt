@@ -65,7 +65,10 @@ internal fun generateSpecification(
     data.logger.logging(nodeForLogging) { "generating specification ```$specIdentifier``` aka $specUid" }
 
     val fileSpecBuilder =
-        FileSpec.builder(generatedDslInfo.contextClassPackage, "\$Dsl\$Specification\$$specUid")
+        FileSpec.builder(
+            generatedDslInfo.contextClassPackage,
+            data.namingStrategy.specificationFileName(specUid, generatedDslInfo.contextClassName)
+        )
 
     val typeParameterResolver = object : TypeParameterResolver {
         override val parametersMap: Map<String, TypeVariableName> = newTypeVariables.associateBy { it.name }
