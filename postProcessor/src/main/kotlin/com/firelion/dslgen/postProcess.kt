@@ -167,7 +167,7 @@ private class PostProcessingClassVisitor(classVisitor: ClassVisitor) : ClassVisi
                         descriptor
                             .substringAfter("(")
                             .substringBeforeLast(")")
-                            .split("\\[*([BCDFIJSZ]|(L(\\w+/)*\\w+;))".toRegex())
+                            .let("\\[*([BCDFIJSZ]|(L(\\w+/)*\\w+;))".toRegex()::findAll)
                             .count()
                                 + Int.SIZE_BITS - 1
                         ) / Int.SIZE_BITS
