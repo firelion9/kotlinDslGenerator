@@ -92,7 +92,7 @@ enum class PropertyAccessor {
  * * If [functionReturnType] is [Nothing] (default value),
  *   we will look for functions those result is assignable to expected type (derived from parameter type).
  *   Otherwise, we will look for functions with return type [functionReturnType]
- *   (witch should be assignable to expected type).
+ *   (which should be assignable to expected type).
  *   If [functionReturnType] is not assignable to expected type, we will throw an exception.
  *
  * * If [functionParameterTypes] is empty, we will look for the only function matching previous requirements.

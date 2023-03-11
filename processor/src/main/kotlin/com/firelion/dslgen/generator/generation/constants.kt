@@ -22,7 +22,7 @@ internal val SUPPRESS = ClassName(Suppress::class.java.packageName, Suppress::cl
 internal val NOTHING_TO_INLINE = AnnotationSpec.builder(Suppress::class).addMember("\"NOTHING_TO_INLINE\"").build()
 
 /**
- * Function marker for calls witch should be replaced to `default` version calls.
+ * Function marker for calls which should be replaced to `default` version calls.
  */
 internal val POST_PROCESSOR_MARKER_NAME =
     MemberName("com.firelion.dslgen.annotations", ::callDefaultImplMarker.name)

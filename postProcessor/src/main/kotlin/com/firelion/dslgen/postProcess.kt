@@ -53,7 +53,7 @@ private fun postProcessClassFile(classFile: File): Unit = classFile.inputStream(
  * *The Kotlin Dsl Generator* post-processor.
  *
  * Assumes that `callDefaultImplMarker` calls are located only before
- * calls to functions witch have default parameters
+ * calls to functions which have default parameters
  * with all arguments pushed onto stack from single generated DSL context class instance:
  * ```
  * INVOKESTATIC com/firelion/dslgen/annotations/PostProcessorTargetMarkerKt.callDefaultImplMarker:()V
@@ -188,7 +188,7 @@ private class PostProcessingClassVisitor(classVisitor: ClassVisitor) : ClassVisi
                     super.visitVarInsn(Opcodes.ALOAD, thisRefIndex)
                     super.visitFieldInsn(Opcodes.GETFIELD, contextClassName, INITIALIZATION_INFO_NAME_PREFIX + it, "I")
                 }
-                // pushes null witch could be of type Object or DefaultConstructorMarker
+                // pushes null which could be of type Object or DefaultConstructorMarker
                 super.visitInsn(Opcodes.ACONST_NULL)
 
                 // calls default variant of processed function
@@ -204,7 +204,7 @@ private class PostProcessingClassVisitor(classVisitor: ClassVisitor) : ClassVisi
 
             override fun visitMaxs(maxStack: Int, maxLocals: Int) {
                 // we add maxInitInfoCount variables onto stack while pushing initialization info
-                // and an extra null witch we use as the last argument,
+                // and an extra null which we use as the last argument,
                 // so we need maximum maxInitInfoCount + 1 new stack slots and no new local slots
                 super.visitMaxs(maxStack + maxInitInfoCount + 1, maxLocals)
             }
