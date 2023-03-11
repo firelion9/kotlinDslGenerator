@@ -64,8 +64,10 @@ private fun postProcessClassFile(classFile: File): Unit = classFile.inputStream(
  * {
  * ALOAD CONTEXT_LOCAL_INDEX
  * GETFIELD CONTEXT_CLASS.arg0
+ * [
  * DUP
  * INVOKESTATIC kotlin/jvm/internal/Intrinsics.checkNotNull(Ljava/lang/Object;)V
+ * ]
  * }*
  *
  * INVOKESTATIC/INVOKESPECIAL function_or_constructor_with_default_args
