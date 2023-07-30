@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 /**
  * Compiles and runs specified [source] with the KSP processor ([DslSymbolProcessor]).
  *
- * Runs compilation twice with different parameters because
+ * Runs compilation twice with different parameters
  * to address the issue with KSP support in testing library.
  *
  * Based on `vnermolaev`'s workaround from

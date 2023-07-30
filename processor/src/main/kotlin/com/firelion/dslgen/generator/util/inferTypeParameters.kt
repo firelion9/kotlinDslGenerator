@@ -8,7 +8,12 @@ package com.firelion.dslgen.generator.util
 import com.firelion.dslgen.util.unreachableCode
 import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.isOpen
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.Variance
 
 private const val CURRENT_PREFIX = "Current\$"
 private const val NEW_PREFIX = "New\$"
@@ -21,11 +26,11 @@ private const val NEW_PREFIX = "New\$"
  * [expectedReturnType] may only use type parameters from [currentTypeParameters],
  * while [actualReturnType] may only use type parameters from [newTypeParameters].
  *
- * Uses [actualValueParameterTypes] gather extra type parameter variance information.
+ * Uses [actualValueParameterTypes] to gather extra type parameter variance information.
  *
  * @return pair of inferred types and extra type parameters.
  */
-// FIXME: current implementation cover only simple cases and may produce incorrect results if
+// FIXME: current implementation covers only simple cases and may produce incorrect results if
 //    type parameter has 2 or more non-trivial type bounds.
 internal fun inferTypeParameters(
     currentTypeParameters: List<KSTypeParameter>,
