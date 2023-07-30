@@ -5,7 +5,11 @@
 
 package com.firelion.dslgen.generator.util
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.LambdaTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
 
 /**
  * Removes unused (not presented in [usedParameters]) type parameters from list.
@@ -50,7 +54,13 @@ internal fun List<TypeName>.usedTypeVariables(): Set<TypeVariableName> =
 
 private fun TypeName.fillUsedTypeVariablesRecursive(out: MutableSet<TypeVariableName>) {
     when (this) {
-        is TypeVariableName -> out.add(this)
+        is TypeVariableName -> out.add(
+            TypeVariableName(
+                name = name,
+                variance = null,
+                bounds = bounds,
+            )
+        )
 
         is ParameterizedTypeName -> typeArguments.forEach { it.fillUsedTypeVariablesRecursive(out) }
 

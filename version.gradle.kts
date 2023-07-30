@@ -4,4 +4,4 @@
  */
 
 group = "com.firelion.dslgen"
-version = "0.3.0" // @hardlink#001
+version = "0.4.0" // @hardlink#001

@@ -29,18 +29,18 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
 
-    implementation("com.squareup:kotlinpoet:1.12.0")
-    implementation("com.squareup:kotlinpoet-ksp:1.12.0")
+    implementation("com.squareup:kotlinpoet:1.14.2")
+    implementation("com.squareup:kotlinpoet-ksp:1.14.2")
 
     implementation("com.google.devtools.ksp:symbol-processing-api:$kspVersion")
 
     implementation(project(":annotations"))
 
-    implementation("com.google.auto.service:auto-service:1.0.1")
-    kapt("com.google.auto.service:auto-service:1.0.1")
+    implementation("com.google.auto.service:auto-service:1.1.1")
+    kapt("com.google.auto.service:auto-service:1.1.1")
 
     testImplementation(kotlin("test"))
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.4.9")
+    testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.5.0")
 }
 
 sourceSets.main {
