@@ -58,10 +58,15 @@ You can modify DSL generation using `@UseDefaultConstructions` and `@UseAlternat
   (`useDefaultSubDslConstruction`, `useSubFunctionSetter`, `useSubFunctionAdder`) set to `false` OR
   specify explicit DSL marker using `@GenerateDsl`
 
-* Default arguments are supported only on JVM target through bytecode hacking.
-  You can disable this feature by adding respective argument to KSP in build.gradle.kts file:
+* Default arguments are supported only on JVM target through bytecode hacking (either through compiler plugin or by
+  direct modification of compiled classes (LEGACY mode)).
+  You can configure this feature in build.gradle.kts file:
   ```kotlin
-  extensions.configure<KspExtension> {
-    arg("com.firelion.dslgen.allowDefaultArguments", "false")
+
+  extensions.configure(DslGenExt::class.java) {
+    allowDefaultArgs = false // to disable
+    // OR
+    dslPostProcessorMode = DslPostProcessorMode.COMPILER_PLUGIN // or LEGACY
   }
   ```
+  Default configuration uses COMPILER_PLUGIN.
