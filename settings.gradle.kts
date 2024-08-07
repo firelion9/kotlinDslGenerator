@@ -1,17 +1,30 @@
+/*
+ * Copyright (c) 2024 Ternopol Leonid.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
+ */
+
 pluginManagement {
-    val kotlinVersion: String by settings
-    val kspVersion: String by settings
-    plugins {
-        id("com.google.devtools.ksp") version kspVersion
-        kotlin("jvm") version kotlinVersion
-    }
     repositories {
         gradlePluginPortal()
     }
 }
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+    }
 
+    versionCatalogs {
+        create("libs") {
+            from(files("libs.versions.toml"))
+        }
+    }
+}
 rootProject.name = "kotlinDslGenerator"
 
 include(":processor", ":annotations", ":postProcessor")
-if (file("workload").exists()) include(":workload")
 include("gradlePlugin")
+
+if (file("testProject").exists()) include(":testProject")

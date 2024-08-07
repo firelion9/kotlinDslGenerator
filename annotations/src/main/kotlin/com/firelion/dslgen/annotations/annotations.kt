@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -118,4 +118,3 @@ annotation class UseAlternativeConstruction(
     val functionReturnType: KClass<*> = Nothing::class,
     val name: String = ""
 )
-

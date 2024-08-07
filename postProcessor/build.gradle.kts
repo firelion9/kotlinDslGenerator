@@ -1,5 +1,11 @@
+/*
+ * Copyright (c) 2024 Ternopol Leonid.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
+ */
+
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.kapt)
     id("maven-publish")
 }
 
@@ -14,11 +20,11 @@ publishing {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    implementation(kotlin("stdlib"))
-    implementation("org.ow2.asm:asm:9.2")
+    implementation(libs.kotlin.compiler)
+
+    compileOnly(libs.google.auto.service)
+    kapt(libs.google.auto.service)
+
+    implementation(project(":annotations"))
 }

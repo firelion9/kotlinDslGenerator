@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -177,6 +177,12 @@ private fun processFunction0(
         pkg,
         data.namingStrategy.dslFileName(identifier, contextClassNameStr, function.simpleName.asString())
     )
+
+    if (data.allowDefaultArguments) {
+        fileBuilder
+            .addAnnotation(INTERNAL_API_OPT_IN)
+            .addAnnotation(GENERATED_DSL_MARKER_NAME)
+    }
 
     val generatedDsl = GeneratedDslInfo(
         pkg,

@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2023 Ternopol Leonid.
+ * Copyright (c) 2023-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
 val kspVersion: String by project
 
 plugins {
-    kotlin("jvm")
-    kotlin("kapt")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.kapt)
     id("maven-publish")
 }
 
@@ -22,25 +22,29 @@ publishing {
     }
 }
 
-repositories {
-    mavenCentral()
+kotlin {
+    compilerOptions {
+        optIn = listOf("org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi")
+    }
 }
 
 dependencies {
-    implementation(kotlin("stdlib"))
-
-    implementation("com.squareup:kotlinpoet:1.14.2")
-    implementation("com.squareup:kotlinpoet-ksp:1.14.2")
-
-    implementation("com.google.devtools.ksp:symbol-processing-api:$kspVersion")
-
+    implementation(libs.kotlinpoet)
+    implementation(libs.kotlinpoet.ksp)
+    implementation(libs.ksp.api)
     implementation(project(":annotations"))
 
-    implementation("com.google.auto.service:auto-service:1.1.1")
-    kapt("com.google.auto.service:auto-service:1.1.1")
+    implementation(libs.google.auto.service)
+    kapt(libs.google.auto.service)
 
-    testImplementation(kotlin("test"))
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.5.0")
+    implementation(libs.kotlin.test)
+    implementation(libs.test.ksp)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.test.ksp)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 sourceSets.main {

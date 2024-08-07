@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ternopol Leonid.
+ * Copyright (c) 2023-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -11,7 +11,8 @@ internal class NoMakeInlineTests {
     @Test
     fun `test `() {
         compileWithKspAndRun(
-            """import generated.kotlin.*
+            """
+            import generated.kotlin.*
             $BASE_FILE_HEADER
             
             @GenerateDsl(Dsl::class, makeInline = false)

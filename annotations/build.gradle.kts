@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024 Ternopol Leonid.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
+ */
+
 plugins {
     kotlin("jvm")
     id("maven-publish")
@@ -12,12 +17,4 @@ publishing {
             description = "Annotations and markers for The Dsl Generator"
         }
     }
-}
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation(kotlin("stdlib"))
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ternopol Leonid.
+ * Copyright (c) 2023-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -32,12 +32,16 @@ internal fun compileWithKspAndRun(@Language("kotlin") source: String): Any? {
         symbolProcessorProviders = listOf(DslSymbolProcessorProvider())
         messageOutputStream = System.out
     }
-    compilation.compile()
+    var result = compilation.compile()
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, "Pre-compilation failed")
+    result = KotlinCompilation().apply {
+        workingDir = compilation.workingDir
 
-    val result = compilation.apply {
-        sources += compilation.kspGeneratedSourceFiles
+        inheritClassPath = true
 
-        symbolProcessorProviders = emptyList()
+        sources = compilation.sources + compilation.kspGeneratedSourceFiles
+
+        messageOutputStream = System.out
     }.compile()
 
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, "Compilation failed")

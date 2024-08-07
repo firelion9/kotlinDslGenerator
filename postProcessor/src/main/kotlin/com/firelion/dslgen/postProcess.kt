@@ -1,18 +1,17 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
 package com.firelion.dslgen
 
-import org.objectweb.asm.*
+import com.firelion.dslgen.DslGenConstants.INITIALIZATION_INFO_NAME_PREFIX
+import org.jetbrains.org.objectweb.asm.*
 import java.io.File
 import kotlin.math.max
 
-// @hardlink#002
-private const val INITIALIZATION_INFO_NAME_PREFIX = "\$initializationInfo\$"
-
-private const val POST_PROCESS_MARKER_CLASS = "com/firelion/dslgen/annotations/PostProcessorTargetMarkerKt"
+// @hardlink#004
+private const val INTERNAL_API_CLASS = "com/firelion/dslgen/annotations/InternalApiKt"
 private const val POST_PROCESS_MARKER_NAME = "callDefaultImplMarker"
 
 /**
@@ -32,8 +31,8 @@ fun postProcessDir(dir: File) {
  *
  * @see PostProcessingClassVisitor
  */
-private fun postProcessClassFile(classFile: File): Unit = classFile.inputStream().let { inputStream ->
-    val classReader = ClassReader(inputStream)
+private fun postProcessClassFile(classFile: File): Unit = classFile.readBytes().let { bytes ->
+    val classReader = ClassReader(bytes)
     val classWriter = ClassWriter(0) // do not compute maxes or stack frames
 
     val processor = PostProcessingClassVisitor(classWriter)
@@ -42,7 +41,6 @@ private fun postProcessClassFile(classFile: File): Unit = classFile.inputStream(
         processor,
         0 // do not skip or expand anything
     )
-    inputStream.close()
 
     if (processor.classChanged) {
         classFile.writeBytes(classWriter.toByteArray())
@@ -76,6 +74,10 @@ private fun postProcessClassFile(classFile: File): Unit = classFile.inputStream(
 private class PostProcessingClassVisitor(classVisitor: ClassVisitor) : ClassVisitor(Opcodes.ASM9, classVisitor) {
     var classChanged = false; private set
 
+    override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor? {
+        return super.visitAnnotation(descriptor, visible)
+    }
+
     override fun visitMethod(
         access: Int,
         name: String,
@@ -85,131 +87,136 @@ private class PostProcessingClassVisitor(classVisitor: ClassVisitor) : ClassVisi
     ): MethodVisitor {
         val visitor = super.visitMethod(access, name, descriptor, signature, exceptions)
 
-        return object : MethodVisitor(Opcodes.ASM9, visitor) {
+        return PostProcessingMethodVisitor(visitor) { classChanged = true }
+    }
+}
 
-            var isInProcessing: Boolean = false
+internal class PostProcessingMethodVisitor(
+    visitor: MethodVisitor?,
+    private val onClassChanged: () -> Unit = {}
+) : MethodVisitor(Opcodes.ASM9, visitor) {
 
-            /**
-             * `true` if `NEW` instruction was just visited.
-             */
-            var isJustCalledNew: Boolean = false
+    private var isInProcessing: Boolean = false
 
-            /**
-             * Last `GETFIELD` owner argument.
-             */
-            var contextClassName: String? = null
+    /**
+     * `true` if `NEW` instruction was just visited.
+     */
+    private var isJustCalledNew: Boolean = false
 
-            /**
-             * Maximum count of arguments in processed calls (before processing).
-             */
-            var maxInitInfoCount: Int = -1
+    /**
+     * Last `GETFIELD` owner argument.
+     */
+    private var contextClassName: String? = null
 
-            /**
-             * Last argument of `ALOAD`.
-             */
-            var thisRefIndex: Int = -1
+    /**
+     * Maximum count of arguments in processed calls (before processing).
+     */
+    private var maxInitInfoCount: Int = -1
 
-            override fun visitInsn(opcode: Int) {
-                if (isInProcessing && opcode == Opcodes.DUP) {
-                    if (isJustCalledNew) isJustCalledNew = false // DUP after NEW
-                    else return // remove !! assertion
-                }
+    /**
+     * Last argument of `ALOAD`.
+     */
+    private var thisRefIndex: Int = -1
 
-                super.visitInsn(opcode)
-            }
-
-            override fun visitVarInsn(opcode: Int, `var`: Int) {
-                if (isInProcessing && opcode == Opcodes.ALOAD)
-                    thisRefIndex = `var`
-
-                super.visitVarInsn(opcode, `var`)
-            }
-
-            override fun visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String) {
-                if (isInProcessing && opcode == Opcodes.GETFIELD)
-                    contextClassName = owner
-
-                super.visitFieldInsn(opcode, owner, name, descriptor)
-            }
-
-            override fun visitTypeInsn(opcode: Int, type: String?) {
-                if (isInProcessing) isJustCalledNew = true
-
-                super.visitTypeInsn(opcode, type)
-            }
-
-            override fun visitMethodInsn(
-                opcode: Int,
-                owner: String,
-                name: String,
-                descriptor: String,
-                isInterface: Boolean,
-            ) {
-                if (!isInProcessing) {
-                    if (
-                        opcode == Opcodes.INVOKESTATIC
-                        && owner == POST_PROCESS_MARKER_CLASS
-                        && name == POST_PROCESS_MARKER_NAME
-                        && descriptor == "()V"
-                    ) isInProcessing = true // start processing and remove marker
-                    else super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
-
-                    return
-                }
-
-                if (
-                    opcode == Opcodes.INVOKESTATIC
-                    && owner == "kotlin/jvm/internal/Intrinsics"
-                    && name == "checkNotNull"
-                    && descriptor == "(Ljava/lang/Object;)V"
-                ) return // remove !! assertion
-
-                // round_up(argument_count / int_bit_size)
-                val initInfoCount = (
-                        descriptor
-                            .substringAfter("(")
-                            .substringBeforeLast(")")
-                            .let("\\[*([BCDFIJSZ]|(L(\\w+/)*\\w+;))".toRegex()::findAll)
-                            .count()
-                                + Int.SIZE_BITS - 1
-                        ) / Int.SIZE_BITS
-
-                val isConstructor = name == "<init>"
-                val newName = if (isConstructor) name else "$name\$default"
-
-                // add initialization info integer (I) and DefaultConstructorMarker or Object arguments
-                val newDescriptor = descriptor.replace(
-                    ")",
-                    "I".repeat(initInfoCount) +
-                            if (isConstructor) "Lkotlin/jvm/internal/DefaultConstructorMarker;)"
-                            else "Ljava/lang/Object;)"
-                )
-
-                // pushes initialization info onto stack
-                repeat(initInfoCount) {
-                    super.visitVarInsn(Opcodes.ALOAD, thisRefIndex)
-                    super.visitFieldInsn(Opcodes.GETFIELD, contextClassName, INITIALIZATION_INFO_NAME_PREFIX + it, "I")
-                }
-                // pushes null which could be of type Object or DefaultConstructorMarker
-                super.visitInsn(Opcodes.ACONST_NULL)
-
-                // calls default variant of processed function
-                super.visitMethodInsn(opcode, owner, newName, newDescriptor, isInterface)
-
-                // reset state, mark as changed
-                isInProcessing = false
-                classChanged = true
-                thisRefIndex = -1
-                contextClassName = null
-                maxInitInfoCount = max(maxInitInfoCount, initInfoCount)
-            }
-
-            override fun visitMaxs(maxStack: Int, maxLocals: Int) {
-                // we add maxInitInfoCount variables onto stack while pushing initialization info
-                // and an extra null which we use as the last argument,
-                // so we need maximum maxInitInfoCount + 1 new stack slots and no new local slots
-                super.visitMaxs(maxStack + maxInitInfoCount + 1, maxLocals)
-            }
+    override fun visitInsn(opcode: Int) {
+        if (isInProcessing && opcode == Opcodes.DUP) {
+            if (isJustCalledNew) isJustCalledNew = false // DUP after NEW
+            else return // remove !! assertion
         }
+
+        super.visitInsn(opcode)
+    }
+
+    override fun visitVarInsn(opcode: Int, `var`: Int) {
+        if (isInProcessing && opcode == Opcodes.ALOAD)
+            thisRefIndex = `var`
+
+        super.visitVarInsn(opcode, `var`)
+    }
+
+    override fun visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String) {
+        if (isInProcessing && opcode == Opcodes.GETFIELD)
+            contextClassName = owner
+
+        super.visitFieldInsn(opcode, owner, name, descriptor)
+    }
+
+    override fun visitTypeInsn(opcode: Int, type: String?) {
+        if (isInProcessing) isJustCalledNew = true
+
+        super.visitTypeInsn(opcode, type)
+    }
+
+    override fun visitMethodInsn(
+        opcode: Int,
+        owner: String,
+        name: String,
+        descriptor: String,
+        isInterface: Boolean,
+    ) {
+        if (!isInProcessing) {
+            if (
+                opcode == Opcodes.INVOKESTATIC
+                && owner == INTERNAL_API_CLASS
+                && name == POST_PROCESS_MARKER_NAME
+                && descriptor == "()V"
+            ) isInProcessing = true // start processing and remove marker
+            else super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+
+            return
+        }
+
+        if (
+            opcode == Opcodes.INVOKESTATIC
+            && owner == "kotlin/jvm/internal/Intrinsics"
+            && name == "checkNotNull"
+            && descriptor == "(Ljava/lang/Object;)V"
+        ) return // remove !! assertion
+
+        // round_up(argument_count / int_bit_size)
+        val initInfoCount = (
+                descriptor
+                    .substringAfter("(")
+                    .substringBeforeLast(")")
+                    .let("\\[*([BCDFIJSZ]|(L(\\w+/)*\\w+;))".toRegex()::findAll)
+                    .count()
+                        + Int.SIZE_BITS - 1
+                ) / Int.SIZE_BITS
+
+        val isConstructor = name == "<init>"
+        val newName = if (isConstructor) name else "$name\$default"
+
+        // add initialization info integer (I) and DefaultConstructorMarker or Object arguments
+        val newDescriptor = descriptor.replace(
+            ")",
+            "I".repeat(initInfoCount) +
+                    if (isConstructor) "Lkotlin/jvm/internal/DefaultConstructorMarker;)"
+                    else "Ljava/lang/Object;)"
+        )
+
+        // pushes initialization info onto stack
+        repeat(initInfoCount) {
+            super.visitVarInsn(Opcodes.ALOAD, thisRefIndex)
+            super.visitFieldInsn(Opcodes.GETFIELD, contextClassName, INITIALIZATION_INFO_NAME_PREFIX + it, "I")
+        }
+        // pushes null which could be of type Object or DefaultConstructorMarker
+        super.visitInsn(Opcodes.ACONST_NULL)
+
+        // calls default variant of processed function
+        super.visitMethodInsn(opcode, owner, newName, newDescriptor, isInterface)
+
+        // reset state, mark as changed
+        isInProcessing = false
+        onClassChanged()
+        thisRefIndex = -1
+        contextClassName = null
+        maxInitInfoCount = max(maxInitInfoCount, initInfoCount)
+    }
+
+    override fun visitMaxs(maxStack: Int, maxLocals: Int) {
+        // we add maxInitInfoCount variables onto stack while pushing initialization info
+        // and an extra null which we use as the last argument,
+        // so we need maximum maxInitInfoCount + 1 new stack slots and no new local slots
+        super.visitMaxs(maxStack + maxInitInfoCount + 1, maxLocals)
     }
 }

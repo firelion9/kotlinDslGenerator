@@ -1,16 +1,17 @@
+/*
+ * Copyright (c) 2024 Ternopol Leonid.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
+ */
+
 val kspVersion: String by project
 
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("java-gradle-plugin")
     id("maven-publish")
 }
 
 apply(from = "../version.gradle.kts")
-
-repositories {
-    mavenCentral()
-}
 
 gradlePlugin {
     plugins {
@@ -22,11 +23,11 @@ gradlePlugin {
     }
 }
 dependencies {
-    implementation(kotlin("stdlib"))
+    compileOnly(libs.kotlin.gradle)
+    implementation(libs.kotlin.gradle.api)
 
-    compileOnly(kotlin("gradle-plugin"))
     implementation(gradleApi())
+    implementation(libs.ksp.gradle)
 
     implementation(project(":postProcessor"))
-    implementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:$kspVersion")
 }
