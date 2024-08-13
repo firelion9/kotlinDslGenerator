@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -13,8 +13,10 @@ package com.firelion.dslgen.util
  */
 
 import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
@@ -68,15 +70,3 @@ internal fun KSTypeArgument.toTypeNameFix(
         Variance.INVARIANT -> typeName
     }
 }
-
-/**
- * Copy of function from kotlinpoet-ksp.
- */
-private fun ClassName.withTypeArguments(arguments: List<TypeName>): TypeName {
-    return if (arguments.isEmpty()) {
-        this
-    } else {
-        this.parameterizedBy(arguments)
-    }
-}
-

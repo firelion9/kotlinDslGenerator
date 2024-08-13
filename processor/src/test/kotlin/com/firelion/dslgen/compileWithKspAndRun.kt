@@ -5,10 +5,7 @@
 
 package com.firelion.dslgen
 
-import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.SourceFile
-import com.tschuchort.compiletesting.kspSourcesDir
-import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.*
 import org.intellij.lang.annotations.Language
 import kotlin.test.assertEquals
 
@@ -21,7 +18,7 @@ import kotlin.test.assertEquals
  * Based on `vnermolaev`'s workaround from
  * `https://github.com/tschuchortdev/kotlin-compile-testing/issues/72#issuecomment-744475289`
  */
-internal fun compileWithKspAndRun(@Language("kotlin") source: String): Any? {
+internal fun compileWithKspAndRun(@Language("kotlin") source: String, withPlugin: Boolean = false): Any? {
     val kotlinSource = SourceFile.kotlin("Source.kt", source)
 
     val compilation = KotlinCompilation().apply {
@@ -31,6 +28,9 @@ internal fun compileWithKspAndRun(@Language("kotlin") source: String): Any? {
 
         symbolProcessorProviders = listOf(DslSymbolProcessorProvider())
         messageOutputStream = System.out
+        if (withPlugin) {
+            kspArgs["com.firelion.dslgen.allowDefaultArguments"] = "true"
+        }
     }
     var result = compilation.compile()
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, "Pre-compilation failed")
@@ -42,6 +42,9 @@ internal fun compileWithKspAndRun(@Language("kotlin") source: String): Any? {
         sources = compilation.sources + compilation.kspGeneratedSourceFiles
 
         messageOutputStream = System.out
+        if (withPlugin) {
+            // TODO: use dslgen plugin
+        }
     }.compile()
 
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, "Compilation failed")

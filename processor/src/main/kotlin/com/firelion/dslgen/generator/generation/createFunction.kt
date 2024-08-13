@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -58,7 +58,7 @@ internal fun FileSpec.Builder.generateCreateFunction(
                     .addFunctionCall(
                         exitFunction,
                         functionParameters.asSequence().map { (param, type) ->
-                            val name = "\$\$${param.name!!.asString()}\$\$"
+                            val name = data.namingStrategy.backingPropertyName(param.name!!.asString())
 
                             fun addWithToArray(typeName: String) =
                                 CodeBlock.of((if (param.isVararg) "*" else "") + "%N.to${typeName}Array()", name)

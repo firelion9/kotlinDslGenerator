@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -16,6 +16,7 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 
 /**
@@ -40,16 +41,19 @@ internal class Data(
  */
 internal class GeneratedDslInfo(
     val contextClassPackage: String,
-    val contextClassName: String,
+    val contextClassSimpleName: String,
     val typeParameters: List<KSTypeParameter>,
     val parameters: Map<String, GeneratedDslParameterInfo>,
     val returnType: KSType,
-)
+) {
+    fun contextClassName() = ClassName(contextClassPackage, contextClassSimpleName)
+}
 
 /**
  * Stores information about generated DSL context class's property.
  */
 internal class GeneratedDslParameterInfo(
+    val name: String,
     val backingPropertyName: String,
     val index: Int,
     val type: KSType,

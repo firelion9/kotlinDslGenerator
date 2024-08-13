@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -11,11 +11,11 @@ import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.shouldNotBeReached
 import com.firelion.dslgen.util.toTypeNameFix
+import com.firelion.dslgen.util.withTypeArguments
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 
 /**
@@ -32,7 +32,6 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
     typeParameters: List<KSTypeParameter>,
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
-    dslMarker: AnnotationSpec,
     data: Data,
 ) {
     data.logger.logging { "generating DSL collection adder $name" }
@@ -43,7 +42,6 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
         itemFunction,
         data,
         generationParameters,
-        dslMarker,
         typeVariables,
         typeParameters,
         endTypeArgs
@@ -67,11 +65,8 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
             .map { typeMapping.getValue(it) }
             .map { it.toTypeNameFix(typeParameterResolver) }
             .toList()
-            .let {
-                if (it.isEmpty()) elementContextClassName
-                else elementContextClassName.parameterizedBy(it)
-            }
-            .let { it.copy(annotations = it.annotations + listOf(dslMarker)) }
+            .let { elementContextClassName.withTypeArguments(it) }
+            .let { it.copy(annotations = it.annotations + listOf(generationParameters.dslMarker)) }
 
     val usedTypeVariables = elementContextTypeName.usedTypeVariables()
 
@@ -80,7 +75,7 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
     val lambdaName = data.namingStrategy.builderLambdaName(name)
 
     FunSpec.builder(name)
-        .addAnnotation(dslMarker)
+        .addAnnotation(generationParameters.dslMarker)
         .makeInlineIfRequested(generationParameters, hasSomethingToInline = true)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
@@ -91,6 +86,7 @@ internal fun FileSpec.Builder.generateDslCollectionAdder(
                 returnType = UNIT
             )
         )
+        .callsExactlyOnceInPlace(lambdaName)
         .apply {
             addCode(initialize(backingPropertyIndex, data))
             addCode(

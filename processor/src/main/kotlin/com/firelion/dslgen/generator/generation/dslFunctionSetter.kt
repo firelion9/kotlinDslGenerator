@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -11,11 +11,11 @@ import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.shouldNotBeReached
 import com.firelion.dslgen.util.toTypeNameFix
+import com.firelion.dslgen.util.withTypeArguments
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 
 /**
@@ -33,7 +33,6 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
     typeParameters: List<KSTypeParameter>,
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
-    dslMarker: AnnotationSpec,
     data: Data,
 ) {
     data.logger.logging { "generating DSL function setter $name" }
@@ -45,7 +44,6 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
             exitFunction,
             data,
             generationParameters,
-            dslMarker,
             typeVariables,
             typeParameters,
             endTypeArgs,
@@ -69,11 +67,8 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
             .map { typeMapping.getValue(it) }
             .map { it.toTypeNameFix(typeParameterResolver) }
             .toList()
-            .let {
-                if (it.isEmpty()) innerContextClassName
-                else innerContextClassName.parameterizedBy(it)
-            }
-            .let { it.copy(annotations = it.annotations + listOf(dslMarker)) }
+            .let { innerContextClassName.withTypeArguments(it) }
+            .let { it.copy(annotations = it.annotations + listOf(generationParameters.dslMarker)) }
 
     val usedTypeVariables = innerContextTypeName.usedTypeVariables()
 
@@ -81,7 +76,7 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
 
     val lambdaName = data.namingStrategy.builderLambdaName(name)
     FunSpec.builder(name)
-        .addAnnotation(dslMarker)
+        .addAnnotation(generationParameters.dslMarker)
         .makeInlineIfRequested(generationParameters, hasSomethingToInline = true)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
@@ -92,6 +87,7 @@ internal fun FileSpec.Builder.generateDslFunctionSetter(
                 returnType = UNIT
             )
         )
+        .callsExactlyOnceInPlace(lambdaName)
         .apply {
             if (requiresNoInitialization)
                 addCode(checkNoInitialization(backingPropertyIndex, parameterName, data))

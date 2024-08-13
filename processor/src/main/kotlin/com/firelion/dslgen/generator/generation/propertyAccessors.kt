@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -29,7 +29,6 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
     typeVariables: List<TypeVariableName>,
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
-    dslMarker: AnnotationSpec,
     data: Data,
 ) {
     data.logger.logging { "generating property accessor $name, propertyAccessor=$propertyAccessor" }
@@ -40,7 +39,7 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
     val usedTypeVariables = propertyType.usedTypeVariables()
 
     PropertySpec.builder(name, propertyType)
-        .addAnnotation(dslMarker)
+        .addAnnotation(generationParameters.dslMarker)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .apply {
@@ -60,7 +59,7 @@ internal fun FileSpec.Builder.generatePropertyAccessors(
                                 addCode(checkNoInitialization(backingPropertyIndex, parameterName, data))
 
                             addCode(initialize(backingPropertyIndex, data))
-                            addCode("this.%N = value\n", "\$\$$parameterName\$\$")
+                            addCode("this.%N = value\n", data.namingStrategy.backingPropertyName(parameterName))
                         }
                         .build()
                 )

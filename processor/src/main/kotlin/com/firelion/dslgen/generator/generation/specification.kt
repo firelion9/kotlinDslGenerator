@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -11,8 +11,10 @@ import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.writeTo
 
@@ -34,7 +36,6 @@ internal fun generateSpecification(
     newTypeParameters: List<KSTypeParameter>?,
     returnTypeArguments: List<KSTypeArgument>?,
     generationParameters: GenerationParameters?,
-    dslMarker: AnnotationSpec?,
     data: Data,
     nodeForLogging: KSNode,
 ) {
@@ -43,12 +44,11 @@ internal fun generateSpecification(
         || newTypeParameters == null
         || returnTypeArguments == null
         || generationParameters == null
-        || dslMarker == null
         || returnTypeArguments.isEmpty()
     ) return
 
     data.logger.logging {
-        "generating specification for ${generatedDslInfo.contextClassName} with returnTypeArguments=$returnTypeArguments, generatedDslInfo.returnType.arguments=${generatedDslInfo.returnType.arguments}"
+        "generating specification for ${generatedDslInfo.contextClassSimpleName} with returnTypeArguments=$returnTypeArguments, generatedDslInfo.returnType.arguments=${generatedDslInfo.returnType.arguments}"
     }
 
     require(returnTypeArguments.size == generatedDslInfo.returnType.arguments.size)
@@ -56,7 +56,7 @@ internal fun generateSpecification(
     val (specIdentifier, specUid) = getSpecificationUniqueIdentifier(
         newTypeVariables,
         returnTypeArguments,
-        generatedDslInfo.contextClassName
+        generatedDslInfo.contextClassSimpleName
     )
 
     if (specUid in data.generatedSpecifications) return
@@ -67,7 +67,7 @@ internal fun generateSpecification(
     val fileSpecBuilder =
         FileSpec.builder(
             generatedDslInfo.contextClassPackage,
-            data.namingStrategy.specificationFileName(specUid, generatedDslInfo.contextClassName)
+            data.namingStrategy.specificationFileName(specUid, generatedDslInfo.contextClassSimpleName)
         )
 
     val typeParameterResolver = object : TypeParameterResolver {
@@ -77,9 +77,9 @@ internal fun generateSpecification(
     }
 
     val contextTypeName =
-        ClassName(generatedDslInfo.contextClassPackage, generatedDslInfo.contextClassName)
+        generatedDslInfo.contextClassName()
             .parameterizedBy(returnTypeArguments.map { it.toTypeNameFix(typeParameterResolver) })
-            .copy(annotations = listOf(dslMarker))
+            .copy(annotations = listOf(generationParameters.dslMarker))
 
     val (typeMapping, extraParameters) = inferTypeParameters(
         newTypeParameters,
@@ -94,10 +94,9 @@ internal fun generateSpecification(
 
     generatedDslInfo.parameters.values.forEach { param ->
         fileSpecBuilder.generateSpecificationFor(
-            dslMarker,
             newTypeVariables,
             newTypeParameters,
-            generatedDslInfo,
+            generatedDslInfo.contextClassSimpleName,
             typeMapping,
             contextTypeName,
             param,
@@ -115,10 +114,9 @@ internal fun generateSpecification(
 }
 
 internal fun FileSpec.Builder.generateSpecificationFor(
-    dslMarker: AnnotationSpec,
     typeVariables: List<TypeVariableName>,
     typeParameters: List<KSTypeParameter>,
-    baseDsl: GeneratedDslInfo,
+    baseDslContextClassName: String,
     typeMapping: Map<KSTypeParameter, KSType>,
     contextTypeName: TypeName,
     dslParameter: GeneratedDslParameterInfo,
@@ -133,13 +131,13 @@ internal fun FileSpec.Builder.generateSpecificationFor(
     val mappedType = type.replaceTypeParameters(typeMapping, data)
 
     data.logger.logging(nodeForLogging) {
-        "generating specification for ${baseDsl.contextClassName}#${dslParameter.backingPropertyName}"
+        "generating specification for $baseDslContextClassName#${dslParameter.backingPropertyName}"
     }
 
     if (dec is KSTypeParameter || type.arrayElementTypeOrNull(data)?.declaration is KSTypeParameter) run whenTypeParameter@{
         if (mappedType is KSTypeParameter) {
             data.logger.logging(nodeForLogging) {
-                "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type  is not a TypeParameter, skipping"
+                "$baseDslContextClassName#${dslParameter.backingPropertyName} type  is not a TypeParameter, skipping"
             }
 
             return@whenTypeParameter
@@ -148,7 +146,7 @@ internal fun FileSpec.Builder.generateSpecificationFor(
         val isArrayType = mappedType.isArrayType(data)
 
         data.logger.logging(nodeForLogging) {
-            "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type is $mappedType, isArrayType = $isArrayType"
+            "$baseDslContextClassName#${dslParameter.backingPropertyName} type is $mappedType, isArrayType = $isArrayType"
         }
 
         if (isArrayType) {
@@ -158,9 +156,9 @@ internal fun FileSpec.Builder.generateSpecificationFor(
             elementClass?.findConstructionFunction(data)?.let { constructor ->
 
                 generateDslCollectionAdder(
-                    "element",
+                    data.namingStrategy.elementAdderName(dslParameter.name),
                     elementType,
-                    dslParameter.backingPropertyName,
+                    dslParameter.name,
                     dslParameter.index,
                     constructor,
                     generationParameters,
@@ -168,14 +166,13 @@ internal fun FileSpec.Builder.generateSpecificationFor(
                     typeParameters,
                     contextTypeName,
                     typeParameterResolver,
-                    dslMarker,
                     data
                 )
 
                 generateSubFunctionAdder(
-                    "element",
+                    data.namingStrategy.elementAdderName(dslParameter.name),
                     elementType,
-                    dslParameter.backingPropertyName,
+                    dslParameter.name,
                     dslParameter.index,
                     constructor,
                     generationParameters,
@@ -183,7 +180,6 @@ internal fun FileSpec.Builder.generateSpecificationFor(
                     typeVariables,
                     contextTypeName,
                     typeParameterResolver,
-                    dslMarker,
                     data
                 )
             }
@@ -198,8 +194,8 @@ internal fun FileSpec.Builder.generateSpecificationFor(
             cls?.findConstructionFunction(data)?.let { constructor ->
 
                 generateDslFunctionSetter(
-                    dslParameter.backingPropertyName,
-                    dslParameter.backingPropertyName,
+                    dslParameter.name,
+                    dslParameter.name,
                     mappedType,
                     dslParameter.index,
                     constructor,
@@ -209,13 +205,12 @@ internal fun FileSpec.Builder.generateSpecificationFor(
                     typeParameters,
                     contextTypeName,
                     typeParameterResolver,
-                    dslMarker,
                     data
                 )
 
                 generateSubFunctionSetter(
-                    dslParameter.backingPropertyName,
-                    dslParameter.backingPropertyName,
+                    dslParameter.name,
+                    dslParameter.name,
                     mappedType,
                     dslParameter.index,
                     constructor,
@@ -225,7 +220,6 @@ internal fun FileSpec.Builder.generateSpecificationFor(
                     typeVariables,
                     contextTypeName,
                     typeParameterResolver,
-                    dslMarker,
                     data
                 )
             }
@@ -233,7 +227,7 @@ internal fun FileSpec.Builder.generateSpecificationFor(
     }
     else
         data.logger.logging(nodeForLogging) {
-            "${baseDsl.contextClassName}#${dslParameter.backingPropertyName} type wasn't a type parameter, no need to generate specification, skipping"
+            "$baseDslContextClassName#${dslParameter.backingPropertyName} type wasn't a type parameter, no need to generate specification, skipping"
         }
 
     val parameterClassDec = mappedType.getClassDeclaration() ?: run {
@@ -249,7 +243,6 @@ internal fun FileSpec.Builder.generateSpecificationFor(
         constructionFunction,
         data,
         generationParameters,
-        dslMarker,
         typeVariables,
         typeParameters,
         type.resolveEndTypeArguments(data).map {

@@ -15,9 +15,10 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
 
+
 @AutoService(CommandLineProcessor::class)
 class DslGenCommandLineProcessor : CommandLineProcessor {
-    override val pluginId: String get() = "com.firelion.dslgen"
+    override val pluginId: String get() = PLUGIN_ID
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         CliOption(
             optionName = OPTION_ENABLED,
@@ -38,7 +39,8 @@ class DslGenCommandLineProcessor : CommandLineProcessor {
         }
 
     companion object {
+        const val PLUGIN_ID = "com.firelion.dslgen"
 
-        private const val OPTION_ENABLED = "allowDslDefaultArgs"
+        const val OPTION_ENABLED = "allowDslDefaultArgs"
     }
 }

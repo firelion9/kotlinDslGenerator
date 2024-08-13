@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -9,6 +9,8 @@ import com.firelion.dslgen.util.processingException
 import com.firelion.dslgen.util.unreachableCode
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ksp.toClassName
 
 /**
  * `@GenerateDsl` representation.
@@ -19,7 +21,9 @@ internal data class GenerationParameters(
     val contextClassName: String,
     val monoParameter: Boolean,
     val makeInline: Boolean,
-)
+) {
+    val dslMarker by lazy { AnnotationSpec.builder(markerClass.toClassName()).build() }
+}
 
 /**
  * Reads `@GenerateDsl` from a function, verifies them

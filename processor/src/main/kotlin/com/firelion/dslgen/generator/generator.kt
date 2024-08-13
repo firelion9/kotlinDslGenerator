@@ -18,8 +18,11 @@ import com.firelion.dslgen.util.processingException
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.isConstructor
 import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
@@ -34,7 +37,6 @@ internal fun processFunction(
     function: KSFunctionDeclaration,
     data: Data,
     parentGenerationParameters: GenerationParameters? = null,
-    parentDslMarker: AnnotationSpec? = null,
     newTypeVariables: List<TypeVariableName>? = null,
     newTypeParameters: List<KSTypeParameter>? = null,
     returnTypeArguments: List<KSTypeArgument>? = null,
@@ -43,7 +45,6 @@ internal fun processFunction(
         function,
         data,
         parentGenerationParameters,
-        parentDslMarker,
         newTypeVariables,
         newTypeParameters,
         returnTypeArguments
@@ -60,7 +61,6 @@ private fun processFunction0(
     function: KSFunctionDeclaration,
     data: Data,
     parentGenerationParameters: GenerationParameters?,
-    parentDslMarker: AnnotationSpec?,
     newTypeVariables: List<TypeVariableName>?,
     newTypeParameters: List<KSTypeParameter>?,
     returnTypeArguments: List<KSTypeArgument>?,
@@ -90,12 +90,11 @@ private fun processFunction0(
             newTypeParameters,
             returnTypeArguments,
             parentGenerationParameters,
-            parentDslMarker,
             data,
             function
         )
 
-        return ClassName(pkg, generatedDsl.contextClassName)
+        return ClassName(pkg, generatedDsl.contextClassSimpleName)
     } else {
         val dec = data.resolver.getClassDeclarationByName("$pkg.$contextClassNameStr")
 
@@ -112,12 +111,13 @@ private fun processFunction0(
                         data.namingStrategy.isInitializationInfoProperty(it.simpleName.asString())
                     }
                     .mapIndexed { idx, it ->
-                        data.namingStrategy.recoverParameterName(it.simpleName.asString()) to
-                                GeneratedDslParameterInfo(
-                                    it.simpleName.asString(),
-                                    idx,
-                                    it.type.resolve()
-                                )
+                        val name = data.namingStrategy.recoverParameterName(it.simpleName.asString())
+                        name to GeneratedDslParameterInfo(
+                            name,
+                            it.simpleName.asString(),
+                            idx,
+                            it.type.resolve()
+                        )
                     }
                     .toMap(),
                 functionReturnType
@@ -132,7 +132,6 @@ private fun processFunction0(
                 newTypeParameters,
                 returnTypeArguments,
                 parentGenerationParameters,
-                parentDslMarker,
                 data,
                 function
             )
@@ -190,12 +189,14 @@ private fun processFunction0(
         function.typeParameters,
         function.parameters
             .mapIndexed { idx, it ->
-                it.name!!.asString() to
-                        GeneratedDslParameterInfo(
-                            it.name!!.asString(),
-                            idx,
-                            it.resolveActualType(data)
-                        )
+                val backingPropertyName = it.name!!.asString()
+                val name = data.namingStrategy.recoverParameterName(backingPropertyName)
+                name to GeneratedDslParameterInfo(
+                    name,
+                    backingPropertyName,
+                    idx,
+                    it.resolveActualType(data)
+                )
             }
             .toMap(),
         functionReturnType
@@ -218,7 +219,6 @@ private fun processFunction0(
             newTypeParameters,
             returnTypeArguments,
             parentGenerationParameters,
-            parentDslMarker,
             data,
             function
         )
@@ -254,8 +254,6 @@ private fun FileSpec.Builder.generateDsl(
     typeParameterResolver: TypeParameterResolver,
     data: Data,
 ): ClassName {
-    val dslMarker = AnnotationSpec.builder(generationParameters.markerClass.toClassName()).build()
-
     val erasableTypeVariables = typeVariables.map { if (it.isReified) it.copy(reified = false) else it }
 
     val contextClassSpec = generateContextClass(
@@ -274,7 +272,7 @@ private fun FileSpec.Builder.generateDsl(
         else contextClassName.parameterizedBy(erasableTypeVariables.map { it }))
             .let {
                 it.copy(
-                    annotations = it.annotations + dslMarker
+                    annotations = it.annotations + generationParameters.dslMarker
                 )
             }
 
@@ -285,23 +283,9 @@ private fun FileSpec.Builder.generateDsl(
         else contextClassName.parameterizedBy(reifiedTypeVariables.map { it }))
             .let {
                 it.copy(
-                    annotations = it.annotations + dslMarker
+                    annotations = it.annotations + generationParameters.dslMarker
                 )
             }
-
-    functionParameters.forEachIndexed { index, prop ->
-        generatePropertySettersAndGetters(
-            prop,
-            data,
-            index,
-            generationParameters,
-            typeParameters,
-            erasableTypeVariables,
-            erasableContextTypeName,
-            typeParameterResolver,
-            dslMarker
-        )
-    }
 
     generateCreateFunction(
         generationParameters,
@@ -314,16 +298,33 @@ private fun FileSpec.Builder.generateDsl(
         data
     )
 
-    if (generationParameters.functionName != null)
-        generateEntryFunction(
-            generationParameters,
-            reifiedTypeVariables,
-            reifiedContextTypeName,
-            returnType,
-            typeParameterResolver,
-            dslMarker,
-            data
-        )
+    when {
+        generationParameters.monoParameter -> {}
+        else -> {
+            functionParameters.forEachIndexed { index, prop ->
+                generatePropertySettersAndGetters(
+                    prop,
+                    data,
+                    index,
+                    generationParameters,
+                    typeParameters,
+                    erasableTypeVariables,
+                    erasableContextTypeName,
+                    typeParameterResolver,
+                )
+            }
+
+            if (generationParameters.functionName != null)
+                generateEntryFunction(
+                    generationParameters,
+                    reifiedTypeVariables,
+                    reifiedContextTypeName,
+                    returnType,
+                    typeParameterResolver,
+                    data
+                )
+        }
+    }
 
     return contextClassName
 }
@@ -337,15 +338,8 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
     typeVariables: List<TypeVariableName>,
     contextTypeName: TypeName,
     typeParameterResolver: TypeParameterResolver,
-    dslMarker: AnnotationSpec,
 ) {
     data.logger.logging(property.first) { "generating setters and getters" }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <T> Map<String?, KSValueArgument>.getSpecial(key: KProperty<*>) = getValue(key.name).value as T
-
-    @Suppress("UNCHECKED_CAST")
-    operator fun <T> Map<String?, KSValueArgument>.get(key: KProperty<T>) = getValue(key.name).value as T
 
     val defaultsAnnotationArgMap =
         property.first.annotations
@@ -375,7 +369,6 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             typeVariables,
             contextTypeName,
             typeParameterResolver,
-            dslMarker,
             data,
         )
     }
@@ -397,7 +390,6 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
             typeVariables,
             contextTypeName,
             typeParameterResolver,
-            dslMarker,
             data,
         )
     }
@@ -420,7 +412,6 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 typeVariables,
                 contextTypeName,
                 typeParameterResolver,
-                dslMarker,
                 data,
             )
         }
@@ -435,7 +426,6 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                 typeVariables,
                 contextTypeName,
                 typeParameterResolver,
-                dslMarker,
                 generationParameters,
                 data
             )
@@ -454,7 +444,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
 
                 if (generateDslAdder)
                     generateDslCollectionAdder(
-                        "element",
+                        data.namingStrategy.elementAdderName(property.first.name!!.asString()),
                         elementType,
                         property.first.name!!.asString(),
                         propertyIndex,
@@ -464,13 +454,12 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                         typeParameters,
                         contextTypeName,
                         typeParameterResolver,
-                        dslMarker,
                         data
                     )
 
                 if (generateSubFunctionAdder)
                     generateSubFunctionAdder(
-                        "element",
+                        data.namingStrategy.elementAdderName(property.first.name!!.asString()),
                         elementType,
                         property.first.name!!.asString(),
                         propertyIndex,
@@ -480,7 +469,6 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                         typeVariables,
                         contextTypeName,
                         typeParameterResolver,
-                        dslMarker,
                         data
                     )
 
@@ -519,7 +507,7 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
 
                 if (generateDefaultSubDslSetter)
                     generateDslFunctionSetter(
-                        property.first.name!!.asString().removeSurrounding("\$\$"),
+                        property.first.name!!.asString(),
                         property.first.name!!.asString(),
                         property.second,
                         propertyIndex,
@@ -530,13 +518,12 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                         typeParameters,
                         contextTypeName,
                         typeParameterResolver,
-                        dslMarker,
                         data
                     )
 
                 if (generateDefaultSubFunctionSetter)
                     generateSubFunctionSetter(
-                        property.first.name!!.asString().removeSurrounding("\$\$"),
+                        property.first.name!!.asString(),
                         property.first.name!!.asString(),
                         property.second,
                         propertyIndex,
@@ -547,7 +534,6 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                         typeVariables,
                         contextTypeName,
                         typeParameterResolver,
-                        dslMarker,
                         data
                     )
             }
@@ -556,57 +542,16 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
 
     property.first.annotations
         .filterMatchingType(data.usefulTypes.ksUseAlternativeConstruction)
-        .map { annotation ->
-            annotation to annotation.arguments.associateBy { it.name?.asString() }
-        }
-        .forEach { (annotation, alternativeConstructionArgMap) ->
+        .forEach { annotation ->
 
-            val isElementConstruction: Boolean =
-                alternativeConstructionArgMap[UseAlternativeConstruction::isElementConstruction]
+            val (isElementConstruction: Boolean, name: String, resolvedFunction) = resolveAlternativeConstructor(
+                annotation,
+                property,
+                { elementType },
+                isArrayType,
+                data
+            )
 
-            val functionPackageName: String =
-                alternativeConstructionArgMap[UseAlternativeConstruction::functionPackageName]
-
-            val functionClass: KSType =
-                alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionClass)
-
-            val functionName: String =
-                alternativeConstructionArgMap[UseAlternativeConstruction::functionName]
-
-            val functionParameterTypes: List<KSType> =
-                alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionParameterTypes)
-
-            val functionReturnType: KSType =
-                alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionReturnType)
-
-            val name: String =
-                alternativeConstructionArgMap[UseAlternativeConstruction::name]
-
-            if (isElementConstruction && !isArrayType)
-                data.logger.warn(
-                    "`${UseAlternativeConstruction::isElementConstruction.name} = true` would be ignored for non-array types",
-                    annotation.arguments.find { it.name?.asString() == UseAlternativeConstruction::isElementConstruction.name }
-                )
-
-            val expectedType = if (isElementConstruction && isArrayType) elementType else property.second
-
-            val resolvedFunction = runCatching {
-                resolveFunction(
-                    data,
-                    expectedType,
-                    functionPackageName,
-                    functionClass,
-                    functionName,
-                    functionParameterTypes,
-                    functionReturnType
-                )
-            }.getOrElse {
-                processingException(
-                    annotation.location,
-                    it as Exception,
-                    "failed to find function matching ${alternativeConstructionArgMap.values}"
-                )
-            }
             if (isElementConstruction && isArrayType) {
                 generateDslCollectionAdder(
                     name,
@@ -619,7 +564,6 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                     typeParameters,
                     contextTypeName,
                     typeParameterResolver,
-                    dslMarker,
                     data
                 )
             } else {
@@ -635,10 +579,73 @@ private fun FileSpec.Builder.generatePropertySettersAndGetters(
                     typeParameters,
                     contextTypeName,
                     typeParameterResolver,
-                    dslMarker,
                     data
                 )
             }
         }
 }
 
+private inline fun resolveAlternativeConstructor(
+    annotation: KSAnnotation,
+    property: Pair<KSValueParameter, KSType>,
+    elementType: () -> KSType,
+    isArrayType: Boolean,
+    data: Data,
+): Triple<Boolean, String, KSFunctionDeclaration> {
+    val alternativeConstructionArgMap = annotation.arguments.associateBy { it.name?.asString() }
+
+    val isElementConstruction: Boolean =
+        alternativeConstructionArgMap[UseAlternativeConstruction::isElementConstruction]
+
+    val functionPackageName: String =
+        alternativeConstructionArgMap[UseAlternativeConstruction::functionPackageName]
+
+    val functionClass: KSType =
+        alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionClass)
+
+    val functionName: String =
+        alternativeConstructionArgMap[UseAlternativeConstruction::functionName]
+
+    val functionParameterTypes: List<KSType> =
+        alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionParameterTypes)
+
+    val functionReturnType: KSType =
+        alternativeConstructionArgMap.getSpecial(UseAlternativeConstruction::functionReturnType)
+
+    val name: String =
+        alternativeConstructionArgMap[UseAlternativeConstruction::name]
+
+    if (isElementConstruction && !isArrayType)
+        data.logger.warn(
+            "`${UseAlternativeConstruction::isElementConstruction.name} = true` would be ignored for non-array types",
+            annotation.arguments.find { it.name?.asString() == UseAlternativeConstruction::isElementConstruction.name }
+        )
+
+    val expectedType = if (isElementConstruction && isArrayType) elementType() else property.second
+
+    val resolvedFunction = runCatching {
+        resolveFunction(
+            data,
+            expectedType,
+            functionPackageName,
+            functionClass,
+            functionName,
+            functionParameterTypes,
+            functionReturnType
+        )
+    }.getOrElse {
+        processingException(
+            annotation.location,
+            it as Exception,
+            "failed to find function matching ${alternativeConstructionArgMap.values}"
+        )
+    }
+
+    return Triple(isElementConstruction, name, resolvedFunction)
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun <T> Map<String?, KSValueArgument>.getSpecial(key: KProperty<*>) = getValue(key.name).value as T
+
+@Suppress("UNCHECKED_CAST")
+private operator fun <T> Map<String?, KSValueArgument>.get(key: KProperty<T>) = getValue(key.name).value as T

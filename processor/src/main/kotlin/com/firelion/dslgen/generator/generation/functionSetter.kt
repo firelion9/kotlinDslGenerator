@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -10,7 +10,10 @@ import com.firelion.dslgen.generator.util.*
 import com.firelion.dslgen.logging
 import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSType
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 
 /**
@@ -26,7 +29,6 @@ internal fun FileSpec.Builder.generateFunctionSetter(
     typeVariables: List<TypeVariableName>,
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
-    dslMarker: AnnotationSpec,
     data: Data,
 ) {
     data.logger.logging { "generating function setter $name" }
@@ -35,8 +37,7 @@ internal fun FileSpec.Builder.generateFunctionSetter(
     val usedTypeVariables = backingPropertyTypeName.usedTypeVariables()
 
     FunSpec.builder(name)
-        .addAnnotation(dslMarker)
-        .makeInlineIfRequested(generationParameters)
+        .addAnnotation(generationParameters.dslMarker)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .receiver(contextClassName.starProjectUnusedParameters(usedTypeVariables))
         .addParameterProxy(name, backingPropertyTypeName, backingPropertyType, data)

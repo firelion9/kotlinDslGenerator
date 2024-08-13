@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Ternopol Leonid.
+ * Copyright (c) 2022-2024 Ternopol Leonid.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
@@ -12,7 +12,10 @@ import com.firelion.dslgen.util.toTypeNameFix
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 
@@ -22,7 +25,7 @@ import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 internal fun FileSpec.Builder.generateSubFunctionAdder(
     name: String,
     elementType: KSType,
-    backingPropertyName: String,
+    parameterName: String,
     backingPropertyIndex: Int,
     exitFunction: KSFunctionDeclaration,
     generationParameters: GenerationParameters,
@@ -30,7 +33,6 @@ internal fun FileSpec.Builder.generateSubFunctionAdder(
     typeVariables: List<TypeVariableName>,
     contextClassName: TypeName,
     typeParameterResolver: TypeParameterResolver,
-    dslMarker: AnnotationSpec,
     data: Data,
 ) {
     data.logger.logging { "generating sub function adder" }
@@ -50,7 +52,7 @@ internal fun FileSpec.Builder.generateSubFunctionAdder(
     val usedTypeVariables = elementType.toTypeNameFix(resolver).usedTypeVariables()
 
     FunSpec.builder(name)
-        .addAnnotation(dslMarker)
+        .addAnnotation(generationParameters.dslMarker)
         .makeInlineIfRequested(generationParameters)
         .addTypeVariables(typeVariables.filterUsed(usedTypeVariables))
         .addTypeVariables(extraTypeParameters.toTypeVariableNames(resolver))
@@ -73,7 +75,7 @@ internal fun FileSpec.Builder.generateSubFunctionAdder(
                         postfix = "\n"
                     ) { if (it.isVararg) "*%N" else "%N" }
                 }))",
-                "\$\$$backingPropertyName\$\$",
+                data.namingStrategy.backingPropertyName(parameterName),
                 exitFunction.memberName(),
                 *parameters.map { it.name }.toTypedArray()
             )
