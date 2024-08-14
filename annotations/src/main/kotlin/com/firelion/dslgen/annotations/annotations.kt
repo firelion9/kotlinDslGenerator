@@ -24,10 +24,6 @@ import kotlin.reflect.KClass
  * @param contextClassName is result DSL entry function receiver class name.
  *        If empty or not set, generator replaces it with `$Context$<function signature hash>`.
  *
- * @param monoParameter __(CURRENTLY UNSUPPORTED)__
- *        specifies if annotated one-parameter function's DSL
- *        should be replaced with its parameter's DSL.
- *
  * @param makeInline
  *        if `false`, `inline` modifier will be added only to generated functions
  *        with `reified` type parameters or builder lambdas,
@@ -40,6 +36,7 @@ annotation class GenerateDsl(
     val markerClass: KClass<*>,
     val functionName: String = "",
     val contextClassName: String = "",
+    @Deprecated("Mono-parameter DSLs are not supported")
     val monoParameter: Boolean = false,
     val makeInline: Boolean = true,
 )

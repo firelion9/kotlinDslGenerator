@@ -19,7 +19,6 @@ internal data class GenerationParameters(
     val markerClass: KSType,
     val functionName: String?,
     val contextClassName: String,
-    val monoParameter: Boolean,
     val makeInline: Boolean,
 ) {
     val dslMarker by lazy { AnnotationSpec.builder(markerClass.toClassName()).build() }
@@ -38,7 +37,6 @@ internal fun readGenerationParametersAnnotation(
     var markerClass: KSType? = null
     var functionName = ""
     var contextClassName = ""
-    var monoParameter = false
     var makeInline = true
 
     annotation.arguments.forEach { arg ->
@@ -79,20 +77,11 @@ internal fun readGenerationParametersAnnotation(
             }
 
             "monoParameter" -> {
-                monoParameter = arg.value as Boolean
-
-                if (monoParameter) {
-                    logger.warn(
-                        "Mono-parameter DSLs are not supported yet. monoParameter = true would be ignored",
+                if (arg.value != false) {
+                    logger.error(
+                        "Mono-parameter DSLs are not supported",
                         arg
                     )
-
-                    if (function.parameters.size != 1)
-                        logger.warn(
-                            "Mono-parameter DSL can be generated only for single-parameter functions. " +
-                                    "This warning would be treated as error when mono-parameter DSLs come supported.",
-                            arg
-                        )
                 }
             }
 
@@ -115,7 +104,7 @@ internal fun readGenerationParametersAnnotation(
 
     if (contextClassName.isEmpty()) contextClassName = "\$Context\$$precomputedIdentifier"
 
-    return GenerationParameters(markerClass!!, functionName, contextClassName, monoParameter, makeInline)
+    return GenerationParameters(markerClass!!, functionName, contextClassName, makeInline)
 }
 
 private fun String.classNameToFunctionName() = this.first().toString().lowercase() + substring(1)

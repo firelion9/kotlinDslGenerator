@@ -154,8 +154,7 @@ private fun processFunction0(
         }
             ?: parentGenerationParameters!!.copy(
                 functionName = null,
-                contextClassName = contextClassNameStr,
-                monoParameter = parentGenerationParameters.monoParameter && (function.parameters.size == 1)
+                contextClassName = contextClassNameStr
             )
 
 
@@ -211,17 +210,16 @@ private fun processFunction0(
             function
         )
 
-    if (!generationParameters.monoParameter)
-        generateSpecification(
-            generatedDsl,
-            function.containingFile,
-            newTypeVariables,
-            newTypeParameters,
-            returnTypeArguments,
-            parentGenerationParameters,
-            data,
-            function
-        )
+    generateSpecification(
+        generatedDsl,
+        function.containingFile,
+        newTypeVariables,
+        newTypeParameters,
+        returnTypeArguments,
+        parentGenerationParameters,
+        data,
+        function
+    )
 
     val contextClassName = fileBuilder.generateDsl(
         generationParameters,
@@ -298,33 +296,29 @@ private fun FileSpec.Builder.generateDsl(
         data
     )
 
-    when {
-        generationParameters.monoParameter -> {}
-        else -> {
-            functionParameters.forEachIndexed { index, prop ->
-                generatePropertySettersAndGetters(
-                    prop,
-                    data,
-                    index,
-                    generationParameters,
-                    typeParameters,
-                    erasableTypeVariables,
-                    erasableContextTypeName,
-                    typeParameterResolver,
-                )
-            }
-
-            if (generationParameters.functionName != null)
-                generateEntryFunction(
-                    generationParameters,
-                    reifiedTypeVariables,
-                    reifiedContextTypeName,
-                    returnType,
-                    typeParameterResolver,
-                    data
-                )
-        }
+    functionParameters.forEachIndexed { index, prop ->
+        generatePropertySettersAndGetters(
+            prop,
+            data,
+            index,
+            generationParameters,
+            typeParameters,
+            erasableTypeVariables,
+            erasableContextTypeName,
+            typeParameterResolver,
+        )
     }
+
+    if (generationParameters.functionName != null)
+        generateEntryFunction(
+            generationParameters,
+            reifiedTypeVariables,
+            reifiedContextTypeName,
+            returnType,
+            typeParameterResolver,
+            data
+        )
+
 
     return contextClassName
 }
