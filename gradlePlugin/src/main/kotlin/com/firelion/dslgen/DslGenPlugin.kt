@@ -72,6 +72,6 @@ class DslGenPlugin : Plugin<Project> {
     }
 
     companion object {
-        const val VERSION = "0.4.0" // @hardlink#001
+        const val VERSION = "0.5.0" // @hardlink#001
     }
 }
